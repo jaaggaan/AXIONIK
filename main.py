@@ -1,6 +1,6 @@
 # FILE: main.py
 # CLEANED: 2026-07-21
-# DESCRIPTION: AXIONIX FastAPI backend — customer registration, orders, dashboard
+# DESCRIPTION: AXIONIK FastAPI backend — customer registration, orders, dashboard
 
 from __future__ import annotations
 
@@ -261,8 +261,8 @@ def calculate_vip_tier(spend: float) -> str:
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="AXIONIX API",
-    description="AXIONIX client node backend services",
+    title="AXIONIK API",
+    description="AXIONIK client node backend services",
     version="3.0.0"
 )
 
@@ -443,7 +443,7 @@ async def get_order(order_id: str) -> dict[str, Any]:
 
 @app.get("/dashboard-ui")
 async def dashboard_ui() -> HTMLResponse:
-    """Renders the premium AXIONIX client management dashboard."""
+    """Renders the premium AXIONIK client management dashboard."""
     return HTMLResponse(_render_dashboard_ui())
 
 # REMOVED: Unused settings, profile, export and push endpoints
@@ -459,7 +459,7 @@ def _render_dashboard_ui() -> str:
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>AXIONIX — Retail Intelligence Dashboard</title>
+<title>AXIONIK — Retail Intelligence Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
@@ -596,7 +596,7 @@ tbody tr:hover { background: var(--bg-card-hover); }
 <aside>
   <div class="logo-container">
     <i class="fa-solid fa-cube logo-icon"></i>
-    <span class="logo-text">AXIONIX</span>
+    <span class="logo-text">AXIONIK</span>
   </div>
   <nav>
     <div class="nav-item active"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></div>
@@ -784,5 +784,5 @@ window.addEventListener('load', () => {
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting AXIONIX FastAPI app on port 8000")
+    logger.info("Starting AXIONIK FastAPI app on port 8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)
