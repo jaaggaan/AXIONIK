@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXIONIK — Shoppers Stop Platform Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════
+     PAGE & PRINT SETUP
+  ═══════════════════════════════════════════════ */
+  @page {
+    size: A4 portrait;
+    margin: 18mm 20mm 18mm 20mm;
+  }
+  @media print {
+    html, body { margin: 0; padding: 0; }
+    .page { page-break-after: always; box-shadow: none !important; }
+    .page:last-child { page-break-after: avoid; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* ═══════════════════════════════════════════════
+     BASE RESET & TYPOGRAPHY
+  ═══════════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 10pt; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #1A1A1A;
+    background: #E8E8E8;
+    line-height: 1.5;
+  }
+
+  /* ═══════════════════════════════════════════════
+     A4 PAGE CONTAINER
+  ═══════════════════════════════════════════════ */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    max-height: 297mm;
+    overflow: hidden;
+    background: #FFFFFF;
+    margin: 12mm auto;
+    padding: 18mm 20mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ═══════════════════════════════════════════════
+     VARIABLES / BRAND TOKENS
+  ═══════════════════════════════════════════════ */
+  :root {
+    --ink: #1A1A1A;
+    --ink2: #4A4A4A;
+    --ink3: #6B6B6B;
+    --ink4: #9B9B9B;
+    --red: #C41E3A;
+    --red-dark: #9E152C;
+    --gold: #C9A96E;
+    --gold-light: #F5EFDF;
+    --gold-dark: #8A6D3B;
+    --surface: #F8F7F5;
+    --border: #E0DDD8;
+    --border-light: #EDEAE5;
+  }
+
+  /* ═══════════════════════════════════════════════
+     HEADER / FOOTER
+  ═══════════════════════════════════════════════ */
+  .doc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 10pt;
+    border-bottom: 2pt solid var(--red);
+    margin-bottom: 14pt;
+    flex-shrink: 0;
+  }
+  .doc-header-brand {
+    display: flex;
+    flex-direction: column;
+  }
+  .brand-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15pt;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .brand-name span { color: var(--red); }
+  .brand-sub {
+    font-size: 7pt;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    color: var(--gold-dark);
+    text-transform: uppercase;
+    margin-top: 3pt;
+  }
+  .doc-header-meta {
+    text-align: right;
+    font-size: 7.5pt;
+    color: var(--ink3);
+    line-height: 1.6;
+  }
+  .doc-header-meta strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .doc-footer {
+    margin-top: auto;
+    padding-top: 8pt;
+    border-top: 0.75pt solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 7pt;
+    color: var(--ink4);
+    flex-shrink: 0;
+  }
+  .doc-footer strong { color: var(--ink3); font-weight: 600; }
+
+  /* ═══════════════════════════════════════════════
+     TYPOGRAPHY
+  ═══════════════════════════════════════════════ */
+  .section-label {
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 4pt;
+  }
+  h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 20pt;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+  }
+  h1 .accent { color: var(--red); }
+  h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+    margin-bottom: 5pt;
+  }
+  h2 .accent { color: var(--red); }
+  h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4pt;
+  }
+  p {
+    font-size: 8.5pt;
+    color: var(--ink2);
+    line-height: 1.6;
+    margin-bottom: 7pt;
+  }
+  p:last-child { margin-bottom: 0; }
+  .lead {
+    font-size: 10pt;
+    font-weight: 400;
+    color: var(--ink2);
+    line-height: 1.65;
+  }
+  .curiosity-line {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13pt;
+    font-weight: 700;
+    color: var(--red);
+    line-height: 1.3;
+    margin: 10pt 0 8pt;
+    font-style: italic;
+    border-left: 3pt solid var(--red);
+    padding-left: 10pt;
+  }
+  ul.bullet-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul.bullet-list li {
+    font-size: 8.5pt;
+    color: var(--ink2);
+    line-height: 1.55;
+    padding: 2pt 0 2pt 13pt;
+    position: relative;
+  }
+  ul.bullet-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold-dark);
+    font-weight: 700;
+  }
+  ul.bullet-list li strong { color: var(--ink); font-weight: 600; }
+
+  /* ═══════════════════════════════════════════════
+     LAYOUT UTILITIES
+  ═══════════════════════════════════════════════ */
+  .content-body { flex: 1; }
+  .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; }
+  .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12pt; }
+  .cols-60-40 { display: grid; grid-template-columns: 60fr 40fr; gap: 14pt; }
+  .mt-6 { margin-top: 6pt; }
+  .mt-8 { margin-top: 8pt; }
+  .mt-10 { margin-top: 10pt; }
+  .mt-12 { margin-top: 12pt; }
+  .mb-4 { margin-bottom: 4pt; }
+
+  /* ═══════════════════════════════════════════════
+     PAGE 1 — HERO / PROBLEM
+  ═══════════════════════════════════════════════ */
+  .hero-block {
+    background: var(--surface);
+    border: 0.75pt solid var(--border);
+    border-radius: 6pt;
+    padding: 14pt 16pt;
+    margin-bottom: 10pt;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3pt;
+    background: linear-gradient(90deg, var(--red) 0%, var(--gold) 100%);
+  }
+  .opportunity-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8pt;
+    margin-top: 10pt;
+  }
+  .opp-card {
+    background: #FFFFFF;
+    border: 0.75pt solid var(--border);
+    border-radius: 5pt;
+    padding: 10pt;
+  }
+  .opp-card-icon {
+    font-size: 14pt;
+    margin-bottom: 4pt;
+  }
+  .opp-card-label {
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink3);
+    margin-bottom: 3pt;
+  }
+  .opp-card-text {
+    font-size: 8pt;
+    color: var(--ink2);
+    line-height: 1.5;
+  }
+  .challenge-box {
+    background: #FFF5F7;
+    border: 0.75pt solid #F0B8C0;
+    border-left: 3pt solid var(--red);
+    border-radius: 5pt;
+    padding: 10pt 12pt;
+  }
+  .challenge-box h3 { color: var(--red); margin-bottom: 6pt; }
+
+  /* ═══════════════════════════════════════════════
+     PAGE 2 — CUSTOMER JOURNEY / SOLUTION
+  ═══════════════════════════════════════════════ */
+  .journey-flow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin: 8pt 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  .journey-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .journey-step::after {
+    content: '→';
+    position: absolute;
+    right: -6pt;
+    top: 11pt;
+    font-size: 10pt;
+    color: var(--gold-dark);
+    font-weight: 700;
+    z-index: 2;
+  }
+  .journey-step:last-child::after { display: none; }
+  .step-bubble {
+    width: 28pt;
+    height: 28pt;
+    border-radius: 50%;
+    background: var(--red);
+    color: #FFF;
+    font-size: 7pt;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 4pt;
+    line-height: 1;
+    text-align: center;
+  }
+  .step-bubble.gold { background: var(--gold-dark); }
+  .step-bubble.dark { background: var(--ink); }
+  .step-label {
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .consent-highlight {
+    background: var(--gold-light);
+    border: 0.75pt solid var(--gold);
+    border-radius: 5pt;
+    padding: 8pt 10pt;
+    margin: 8pt 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8pt;
+  }
+  .consent-icon { font-size: 14pt; flex-shrink: 0; margin-top: 1pt; }
+  .consent-text-block { flex: 1; }
+  .reward-flow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8pt;
+    margin-top: 6pt;
+  }
+  .reward-step {
+    background: var(--surface);
+    border: 0.75pt solid var(--border);
+    border-radius: 5pt;
+    padding: 8pt;
+    text-align: center;
+  }
+  .reward-step-num {
+    font-size: 7pt;
+    font-weight: 800;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 3pt;
+  }
+  .reward-step-icon { font-size: 14pt; margin-bottom: 4pt; }
+  .reward-step-label {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .reward-step-desc {
+    font-size: 7pt;
+    color: var(--ink3);
+    line-height: 1.4;
+    margin-top: 3pt;
+  }
+
+  /* ═══════════════════════════════════════════════
+     PAGE 3 — MARKET / COMPETITIVE
+  ═══════════════════════════════════════════════ */
+  .market-gap-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6pt;
+    font-size: 8pt;
+  }
+  .market-gap-table th {
+    background: var(--ink);
+    color: #FFFFFF;
+    font-size: 7.5pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6pt 8pt;
+    text-align: left;
+  }
+  .market-gap-table td {
+    padding: 5pt 8pt;
+    border-bottom: 0.5pt solid var(--border-light);
+    color: var(--ink2);
+    vertical-align: top;
+    line-height: 1.4;
+  }
+  .market-gap-table tr:nth-child(even) td { background: var(--surface); }
+  .check { color: #2E7D32; font-weight: 700; }
+  .cross { color: #C41E3A; font-weight: 700; }
+  .partial { color: var(--gold-dark); font-weight: 700; }
+  .gap-badge {
+    display: inline-block;
+    background: var(--red);
+    color: #FFF;
+    font-size: 6.5pt;
+    font-weight: 700;
+    padding: 2pt 6pt;
+    border-radius: 3pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 4pt;
+  }
+  .axionik-advantage {
+    background: var(--surface);
+    border: 0.75pt solid var(--border);
+    border-radius: 5pt;
+    padding: 10pt 12pt;
+    margin-top: 8pt;
+  }
+  .advantage-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6pt;
+    margin-top: 6pt;
+  }
+  .advantage-item {
+    background: #FFFFFF;
+    border: 0.75pt solid var(--border-light);
+    border-radius: 4pt;
+    padding: 7pt 9pt;
+    border-left: 2.5pt solid var(--red);
+  }
+  .advantage-item-title {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2pt;
+  }
+  .advantage-item-desc {
+    font-size: 7.5pt;
+    color: var(--ink3);
+    line-height: 1.45;
+  }
+
+  /* ═══════════════════════════════════════════════
+     PAGE 4 — TIER OPTIONS
+  ═══════════════════════════════════════════════ */
+  .tiers-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10pt;
+    margin-top: 8pt;
+  }
+  .tier-card {
+    border: 0.75pt solid var(--border);
+    border-radius: 6pt;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .tier-card.featured {
+    border-color: var(--red);
+    box-shadow: 0 2pt 8pt rgba(196,30,58,0.12);
+  }
+  .tier-header {
+    padding: 12pt 12pt 10pt;
+    text-align: center;
+    border-bottom: 0.75pt solid var(--border-light);
+    background: var(--surface);
+  }
+  .tier-card.featured .tier-header { background: var(--red); }
+  .tier-number {
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink4);
+    margin-bottom: 4pt;
+  }
+  .tier-card.featured .tier-number { color: rgba(255,255,255,0.7); }
+  .tier-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13pt;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: 1px;
+    margin-bottom: 2pt;
+  }
+  .tier-card.featured .tier-name { color: #FFFFFF; }
+  .tier-tagline {
+    font-size: 7.5pt;
+    color: var(--ink3);
+  }
+  .tier-card.featured .tier-tagline { color: rgba(255,255,255,0.8); }
+  .tier-body {
+    padding: 10pt 12pt;
+    flex: 1;
+  }
+  .tier-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 6pt;
+    padding: 3pt 0;
+    border-bottom: 0.5pt solid var(--border-light);
+    font-size: 7.5pt;
+    color: var(--ink2);
+    line-height: 1.4;
+  }
+  .tier-feature:last-child { border-bottom: none; }
+  .tier-feature .fi { color: #2E7D32; font-weight: 700; font-size: 8pt; flex-shrink: 0; margin-top: 1pt; }
+  .tier-footer {
+    padding: 8pt 12pt;
+    background: var(--gold-light);
+    border-top: 0.75pt solid var(--gold);
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: var(--gold-dark);
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .tier-card.featured .tier-footer { background: #FEF0F2; border-color: #F0B8C0; color: var(--red-dark); }
+  .capability-note {
+    background: var(--surface);
+    border: 0.75pt solid var(--border);
+    border-radius: 5pt;
+    padding: 10pt 12pt;
+    margin-top: 10pt;
+  }
+  .axionik-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4pt;
+    margin-top: 10pt;
+    flex-wrap: nowrap;
+  }
+  .flow-node {
+    background: var(--ink);
+    color: #FFFFFF;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 5pt 7pt;
+    border-radius: 4pt;
+    text-align: center;
+    flex: 1;
+    line-height: 1.3;
+  }
+  .flow-node.red { background: var(--red); }
+  .flow-node.gold { background: var(--gold-dark); }
+  .flow-arrow {
+    font-size: 10pt;
+    color: var(--ink4);
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  /* ═══════════════════════════════════════════════
+     PAGE 5 — VISUAL EXPERIENCE + CONCLUSION
+  ═══════════════════════════════════════════════ */
+  .experience-frames {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10pt;
+    margin: 8pt 0;
+  }
+  .exp-frame {
+    border: 0.75pt solid var(--border);
+    border-radius: 6pt;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .exp-frame-screen {
+    height: 80pt;
+    background: var(--surface);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .screen-mock {
+    width: 48pt;
+    height: 68pt;
+    background: #FFFFFF;
+    border: 1pt solid #CCC;
+    border-radius: 4pt;
+    padding: 4pt;
+    display: flex;
+    flex-direction: column;
+    gap: 3pt;
+    box-shadow: 0 2pt 6pt rgba(0,0,0,0.1);
+  }
+  .sm-header {
+    height: 8pt;
+    background: var(--red);
+    border-radius: 2pt;
+  }
+  .sm-logo-area {
+    height: 10pt;
+    background: var(--surface);
+    border-radius: 2pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sm-logo-text {
+    font-family: 'Outfit', sans-serif;
+    font-size: 4pt;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: 0.5px;
+  }
+  .sm-field {
+    height: 5pt;
+    background: var(--border-light);
+    border-radius: 1.5pt;
+  }
+  .sm-btn {
+    height: 6pt;
+    background: var(--red);
+    border-radius: 2pt;
+  }
+  .sm-btn.gold { background: var(--gold-dark); }
+  .sm-scratch {
+    height: 14pt;
+    background: linear-gradient(135deg, var(--gold-light) 0%, #EDD9A3 100%);
+    border-radius: 3pt;
+    border: 0.5pt dashed var(--gold-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sm-scratch-text {
+    font-size: 4pt;
+    font-weight: 700;
+    color: var(--gold-dark);
+  }
+  .sm-product-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2pt;
+    flex: 1;
+  }
+  .sm-product-card {
+    background: var(--surface);
+    border-radius: 2pt;
+    border: 0.5pt solid var(--border-light);
+    display: flex;
+    align-items: flex-end;
+    padding: 2pt;
+  }
+  .sm-product-price {
+    font-size: 3.5pt;
+    font-weight: 700;
+    color: var(--red);
+  }
+  .exp-frame-label {
+    padding: 6pt 8pt;
+    background: #FFFFFF;
+    border-top: 0.75pt solid var(--border);
+  }
+  .exp-frame-step {
+    font-size: 6pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--red);
+    margin-bottom: 2pt;
+  }
+  .exp-frame-title {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .exp-frame-desc {
+    font-size: 7pt;
+    color: var(--ink3);
+    line-height: 1.4;
+    margin-top: 2pt;
+  }
+  .conclusion-box {
+    background: var(--ink);
+    color: #FFFFFF;
+    border-radius: 6pt;
+    padding: 12pt 16pt;
+    margin-top: 10pt;
+  }
+  .conclusion-box h2 { color: #FFFFFF; font-size: 11pt; margin-bottom: 5pt; }
+  .conclusion-box p { color: rgba(255,255,255,0.8); font-size: 8pt; line-height: 1.6; margin-bottom: 6pt; }
+  .conclusion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8pt;
+    margin-top: 8pt;
+  }
+  .conclusion-item {
+    border-left: 2pt solid var(--gold);
+    padding-left: 8pt;
+  }
+  .conclusion-item-title {
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 2pt;
+  }
+  .conclusion-item-desc {
+    font-size: 7.5pt;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.45;
+  }
+  .cta-bar {
+    background: var(--red);
+    color: #FFFFFF;
+    border-radius: 5pt;
+    padding: 8pt 12pt;
+    margin-top: 10pt;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cta-bar-text {
+    font-size: 8.5pt;
+    font-weight: 600;
+  }
+  .cta-bar-contact {
+    font-size: 8pt;
+    color: rgba(255,255,255,0.9);
+  }
+  .cta-bar-contact strong { color: #FFFFFF; font-weight: 700; }
+
+  /* ═══════════════════════════════════════════════
+     DIVIDERS & MISC
+  ═══════════════════════════════════════════════ */
+  .divider {
+    height: 0.75pt;
+    background: var(--border);
+    margin: 10pt 0;
+  }
+  .red-divider {
+    height: 1.5pt;
+    background: linear-gradient(90deg, var(--red) 0%, transparent 100%);
+    margin: 8pt 0;
+  }
+  .inline-badge {
+    display: inline-block;
+    background: var(--gold-light);
+    border: 0.5pt solid var(--gold);
+    color: var(--gold-dark);
+    font-size: 6.5pt;
+    font-weight: 700;
+    padding: 2pt 6pt;
+    border-radius: 3pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .inline-badge.red { background: #FFF0F2; border-color: #F0B8C0; color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     PAGE 1 — RETAIL OPPORTUNITY & THE CHALLENGE
+═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-brand">
+      <div class="brand-name">AXI<span>O</span>NIK</div>
+      <div class="brand-sub">Retail Intelligence Platform</div>
+    </div>
+    <div class="doc-header-meta">
+      <strong>SHOPPERS STOP</strong><br>
+      Platform Documentation · Confidential<br>
+      Fashion &amp; Retail Industry
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div class="section-label">Retail Opportunity</div>
+    <h1>Every Store Visit Is An<br><span class="accent">Untapped Opportunity.</span></h1>
+
+    <div class="curiosity-line">
+      "What if connecting to store Wi-Fi could become the beginning of a meaningful customer relationship?"
+    </div>
+
+    <p class="lead">Customers walk into physical retail stores every day with genuine purchase intent. Yet the relationship between retailers and their in-store visitors often ends the moment a customer walks out. In a world of digital engagement, the physical store visit remains one of retail's most valuable — and underutilised — moments.</p>
+
+    <div class="opportunity-grid">
+      <div class="opp-card">
+        <div class="opp-card-icon">🏬</div>
+        <div class="opp-card-label">Physical Presence</div>
+        <div class="opp-card-text">Customers enter stores with active purchase intent, browsing, comparing, and experiencing products in person.</div>
+      </div>
+      <div class="opp-card">
+        <div class="opp-card-icon">📶</div>
+        <div class="opp-card-label">Underused Wi-Fi</div>
+        <div class="opp-card-text">Guest Wi-Fi is widely deployed in retail stores but is typically treated as connectivity only — a missed engagement touchpoint.</div>
+      </div>
+      <div class="opp-card">
+        <div class="opp-card-icon">🔗</div>
+        <div class="opp-card-label">Missing Bridge</div>
+        <div class="opp-card-text">There is rarely a structured mechanism connecting a customer's physical visit with ongoing digital engagement after they leave the store.</div>
+      </div>
+    </div>
+
+    <div class="mt-10"></div>
+    <div class="challenge-box">
+      <h3>The Retail Engagement Challenge</h3>
+      <ul class="bullet-list">
+        <li>Customers enter physical stores but leave without any digital connection being established</li>
+        <li>In-store Wi-Fi is provided as a convenience without capturing meaningful customer information</li>
+        <li>Retailers lack a standardised way to begin consent-based customer relationships during a store visit</li>
+        <li>Fashion and lifestyle brands invest heavily in in-store experience, but rarely extend that experience digitally from within the store environment</li>
+        <li>Repeat-visit engagement and personalised campaign delivery require customer data that in-store teams currently struggle to collect at scale</li>
+        <li>Every unacquired store visitor is a potential loyalty relationship that was never started</li>
+      </ul>
+    </div>
+
+    <div class="mt-10">
+      <div class="section-label">What Follows in This Document</div>
+      <p>The following pages introduce AXIONIK — a platform that transforms the guest Wi-Fi connection into a structured, branded, consent-driven customer engagement channel for premium fashion and retail. This document outlines the customer journey, competitive landscape, capability tiers, and the complete AXIONIK retail experience for Shoppers Stop.</p>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span><strong>AXIONIK</strong> — Retail Intelligence Platform</span>
+    <span>Shoppers Stop · Platform Documentation</span>
+    <span>Page 1 of 5</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PAGE 2 — CUSTOMER JOURNEY & REWARD EXPERIENCE
+═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-brand">
+      <div class="brand-name">AXI<span>O</span>NIK</div>
+      <div class="brand-sub">Retail Intelligence Platform</div>
+    </div>
+    <div class="doc-header-meta">
+      <strong>SHOPPERS STOP</strong><br>
+      Customer Journey &amp; Engagement
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div class="section-label">Connect With Your Customers</div>
+    <h2>From Store Entry to <span class="accent">Digital Relationship</span></h2>
+    <p>The AXIONIK platform turns the moment a customer connects to in-store Wi-Fi into the beginning of a managed, consent-based retail engagement. Every step in the journey is intentional, branded, and designed to add value for the customer while creating actionable insight for the retailer.</p>
+
+    <div class="journey-flow mt-8">
+      <div class="journey-step">
+        <div class="step-bubble">🏬<br><small style="font-size:4pt">VISIT</small></div>
+        <div class="step-label">Store<br>Visit</div>
+      </div>
+      <div class="journey-step">
+        <div class="step-bubble">📶<br><small style="font-size:4pt">WIFI</small></div>
+        <div class="step-label">Connect<br>to Wi-Fi</div>
+      </div>
+      <div class="journey-step">
+        <div class="step-bubble">📱<br><small style="font-size:4pt">PORTAL</small></div>
+        <div class="step-label">Captive<br>Portal</div>
+      </div>
+      <div class="journey-step">
+        <div class="step-bubble gold">✅<br><small style="font-size:4pt">CONSENT</small></div>
+        <div class="step-label">Portal<br>Consent</div>
+      </div>
+      <div class="journey-step">
+        <div class="step-bubble">🎁<br><small style="font-size:4pt">REWARD</small></div>
+        <div class="step-label">Welcome<br>Reward</div>
+      </div>
+      <div class="journey-step">
+        <div class="step-bubble">🛍️<br><small style="font-size:4pt">DISCOVER</small></div>
+        <div class="step-label">Product<br>Discovery</div>
+      </div>
+      <div class="journey-step">
+        <div class="step-bubble dark">🔄<br><small style="font-size:4pt">ENGAGE</small></div>
+        <div class="step-label">Continued<br>Engagement</div>
+      </div>
+    </div>
+
+    <div class="consent-highlight mt-8">
+      <div class="consent-icon">🔒</div>
+      <div class="consent-text-block">
+        <h3 style="color: var(--gold-dark); margin-bottom: 3pt;">Portal Consent: The Foundation of Everything</h3>
+        <p style="font-size: 8pt; color: var(--ink2);">Before any customer data is captured or used, AXIONIK requires explicit, informed consent through the captive portal. This is not automatic. Customers actively agree to receive communications, offers, and notifications from Shoppers Stop before engaging further with the platform. Consent-first architecture ensures every customer relationship begins ethically and in compliance with data privacy requirements.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-label">Give Rewards. Create Experiences.</div>
+    <h2>The <span class="accent">Scratch-Card Welcome</span> Experience</h2>
+    <p>Following consent, AXIONIK delivers a branded interactive reward — a scratch-card welcome voucher — that turns the Wi-Fi connection moment into a memorable, engaging retail experience rather than a standard form submission.</p>
+
+    <div class="reward-flow">
+      <div class="reward-step">
+        <div class="reward-step-num">Step 1</div>
+        <div class="reward-step-icon">📱</div>
+        <div class="reward-step-label">Sign In &amp; Consent</div>
+        <div class="reward-step-desc">Customer enters details and provides consent on the Shoppers Stop captive portal.</div>
+      </div>
+      <div class="reward-step">
+        <div class="reward-step-num">Step 2</div>
+        <div class="reward-step-icon">🎁</div>
+        <div class="reward-step-label">Gift Unlocked</div>
+        <div class="reward-step-desc">A welcome gift notification appears — personalised to the Shoppers Stop in-store session.</div>
+      </div>
+      <div class="reward-step">
+        <div class="reward-step-num">Step 3</div>
+        <div class="reward-step-icon">✨</div>
+        <div class="reward-step-label">Scratch to Reveal</div>
+        <div class="reward-step-desc">Customer interacts with the scratch-card animation to reveal an exclusive welcome voucher or store benefit.</div>
+      </div>
+      <div class="reward-step">
+        <div class="reward-step-num">Step 4</div>
+        <div class="reward-step-icon">🛍️</div>
+        <div class="reward-step-label">Shop &amp; Redeem</div>
+        <div class="reward-step-desc">Voucher is applied during the in-store shopping session, adding tangible value to the visit.</div>
+      </div>
+    </div>
+
+    <div class="cols-2 mt-10">
+      <div>
+        <h3>For the Customer</h3>
+        <ul class="bullet-list mt-6">
+          <li>No app installation required — works through the browser at time of Wi-Fi connection</li>
+          <li>Simple, fast sign-in with a clear value exchange</li>
+          <li>Interactive welcome reward feels like an experience, not a discount popup</li>
+          <li>Access to current in-store campaigns, featured products, and offers</li>
+          <li>Connected, personalised shopping from the first moment in-store</li>
+        </ul>
+      </div>
+      <div>
+        <h3>For the Retailer</h3>
+        <ul class="bullet-list mt-6">
+          <li>Every Wi-Fi connection becomes a structured engagement opportunity</li>
+          <li>Consent is explicitly captured and logged at the portal stage</li>
+          <li>Customer registration and visit data collected in a consistent, manageable format</li>
+          <li>Campaign and reward delivery controlled centrally by the retailer</li>
+          <li>Foundation for consent-based re-engagement after the store visit</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span><strong>AXIONIK</strong> — Retail Intelligence Platform</span>
+    <span>Shoppers Stop · Platform Documentation</span>
+    <span>Page 2 of 5</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PAGE 3 — MARKET LANDSCAPE & THE AXIONIK GAP
+═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-brand">
+      <div class="brand-name">AXI<span>O</span>NIK</div>
+      <div class="brand-sub">Retail Intelligence Platform</div>
+    </div>
+    <div class="doc-header-meta">
+      <strong>SHOPPERS STOP</strong><br>
+      Market Landscape &amp; Positioning
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div class="section-label">Market Landscape</div>
+    <h2>Where Existing Solutions <span class="accent">Fall Short</span></h2>
+    <p>Fashion retailers have access to a range of digital tools — from e-commerce platforms to loyalty systems and guest Wi-Fi providers. However, none of these categories have been purpose-built to create a connected in-store engagement experience starting at the Wi-Fi access point. AXIONIK occupies a distinct and largely unaddressed position in the retail technology landscape.</p>
+
+    <table class="market-gap-table">
+      <thead>
+        <tr>
+          <th style="width: 26%;">Category</th>
+          <th style="width: 28%;">Primary Capability</th>
+          <th>In-Store Wi-Fi Engagement</th>
+          <th>Consent Capture</th>
+          <th>Reward / Campaign at Entry</th>
+          <th style="width: 10%;">Physical Retail First</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Fashion Aggregators</strong></td>
+          <td>Online product discovery &amp; comparison</td>
+          <td class="cross">✗</td>
+          <td class="partial">~</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td><strong>E-Commerce Platforms</strong></td>
+          <td>Online retail &amp; delivery</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td><strong>Loyalty Platforms</strong></td>
+          <td>Points, rewards, repeat purchase</td>
+          <td class="partial">~</td>
+          <td class="check">✓</td>
+          <td class="partial">~</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td><strong>Retail POS Systems</strong></td>
+          <td>Billing, inventory, transaction management</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+        </tr>
+        <tr>
+          <td><strong>Guest Wi-Fi Platforms</strong></td>
+          <td>Internet access, basic splash pages</td>
+          <td class="check">✓</td>
+          <td class="partial">~</td>
+          <td class="cross">✗</td>
+          <td class="partial">~</td>
+        </tr>
+        <tr>
+          <td><strong>Customer Engagement Platforms</strong></td>
+          <td>Email, push, SMS campaigns</td>
+          <td class="cross">✗</td>
+          <td class="check">✓</td>
+          <td class="partial">~</td>
+          <td class="cross">✗</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 800; color: #C41E3A;"><strong>AXIONIK</strong> <span class="gap-badge">NEW</span></td>
+          <td style="font-weight: 600;">In-store Wi-Fi engagement platform</td>
+          <td class="check" style="font-weight: 800;">✓✓</td>
+          <td class="check" style="font-weight: 800;">✓✓</td>
+          <td class="check" style="font-weight: 800;">✓✓</td>
+          <td class="check" style="font-weight: 800;">✓✓</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 6pt; font-size: 7pt; color: var(--ink4);">✓ Capability present &nbsp;|&nbsp; ~ Partial or secondary capability &nbsp;|&nbsp; ✗ Not applicable to primary use case</div>
+
+    <div class="axionik-advantage mt-10">
+      <div class="section-label">The AXIONIK Difference</div>
+      <h3>Introducing <span style="color: var(--red);">AXIONIK</span> — Turn Store Wi-Fi Into a Customer Engagement Channel</h3>
+      <p style="font-size: 8pt; color: var(--ink2);">AXIONIK is the only platform purpose-built to connect a customer's physical retail store visit with a structured, branded digital experience — beginning from the moment they connect to store Wi-Fi. No other category solves this combination.</p>
+      <div class="advantage-grid">
+        <div class="advantage-item">
+          <div class="advantage-item-title">In-Store First Architecture</div>
+          <div class="advantage-item-desc">Designed from the ground up for the physical retail environment, not adapted from an online platform.</div>
+        </div>
+        <div class="advantage-item">
+          <div class="advantage-item-title">Consent at the Point of Entry</div>
+          <div class="advantage-item-desc">Explicit, informed customer consent is built into the platform flow — not assumed or implied.</div>
+        </div>
+        <div class="advantage-item">
+          <div class="advantage-item-title">Engagement, Not Just Access</div>
+          <div class="advantage-item-desc">Beyond Wi-Fi access, AXIONIK delivers rewards, campaigns, and product discovery from the first interaction.</div>
+        </div>
+        <div class="advantage-item">
+          <div class="advantage-item-title">Zero Friction for the Customer</div>
+          <div class="advantage-item-desc">No app download. No registration portal outside the store. Wi-Fi is the natural entry point.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cols-2 mt-8">
+      <div>
+        <h3>What AXIONIK Enables</h3>
+        <ul class="bullet-list mt-4">
+          <li>Guest Wi-Fi as a structured <strong>engagement touchpoint</strong></li>
+          <li>Consent-based <strong>customer registration</strong> at scale</li>
+          <li>Campaign and reward delivery <strong>at the point of entry</strong></li>
+          <li>Product and offer discovery <strong>in-session</strong></li>
+          <li>Foundation for <strong>repeat-visit engagement</strong></li>
+        </ul>
+      </div>
+      <div>
+        <h3>What the Market Has Not Provided</h3>
+        <ul class="bullet-list mt-4">
+          <li>A branded, interactive <strong>in-store Wi-Fi experience</strong></li>
+          <li>Consent capture <strong>before</strong> data collection or marketing use</li>
+          <li>Reward and engagement delivery <strong>at Wi-Fi login</strong></li>
+          <li>A connection between <strong>physical visit data and digital engagement</strong></li>
+          <li>A purpose-built platform for <strong>fashion and lifestyle retail</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span><strong>AXIONIK</strong> — Retail Intelligence Platform</span>
+    <span>Shoppers Stop · Platform Documentation</span>
+    <span>Page 3 of 5</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PAGE 4 — AXIONIK TIER OPTIONS
+═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-brand">
+      <div class="brand-name">AXI<span>O</span>NIK</div>
+      <div class="brand-sub">Retail Intelligence Platform</div>
+    </div>
+    <div class="doc-header-meta">
+      <strong>SHOPPERS STOP</strong><br>
+      Capability Tier Options
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div class="section-label">AXIONIK Tier Options</div>
+    <h2>Progressive Capability <span class="accent">Built for Retail</span></h2>
+    <p>AXIONIK is available in three progressive capability tiers. Each tier builds on the capabilities of the previous, allowing retailers to begin with a strong foundation and expand as their engagement strategy matures.</p>
+
+    <div class="tiers-wrapper">
+
+      <!-- TIER 1 -->
+      <div class="tier-card">
+        <div class="tier-header">
+          <div class="tier-number">Tier 1</div>
+          <div class="tier-name">CONNECT</div>
+          <div class="tier-tagline">Establish the foundation</div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-feature"><span class="fi">✓</span><span>Branded captive portal with Shoppers Stop identity and store branding</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Guest Wi-Fi onboarding and structured customer registration</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Explicit portal consent capture before data collection</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Basic customer profile registration — name, contact, visit information</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Store brand identity and welcome messaging on portal</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Customer sign-in data visible in retailer dashboard</span></div>
+        </div>
+        <div class="tier-footer">Foundation Layer — Consent &amp; Registration</div>
+      </div>
+
+      <!-- TIER 2 — FEATURED -->
+      <div class="tier-card featured">
+        <div class="tier-header">
+          <div class="tier-number">Tier 2 · Recommended</div>
+          <div class="tier-name">ENGAGE</div>
+          <div class="tier-tagline">Everything in Connect, plus</div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-feature"><span class="fi">✓</span><span>Interactive scratch-card welcome reward experience at login</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>In-session campaign and offer delivery to connected customers</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Featured product and offer discovery within the portal experience</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Repeat-visit recognition and personalised welcome messaging</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Consent-based customer re-engagement after the store visit</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Promotional experience management — vouchers, rewards, seasonal campaigns</span></div>
+        </div>
+        <div class="tier-footer">Full Engagement — Rewards &amp; Campaigns</div>
+      </div>
+
+      <!-- TIER 3 -->
+      <div class="tier-card">
+        <div class="tier-header">
+          <div class="tier-number">Tier 3</div>
+          <div class="tier-name">INTELLIGENCE</div>
+          <div class="tier-tagline">Everything in Engage, plus</div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-feature"><span class="fi">✓</span><span>Multi-store deployment and centralised management across locations</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Customer engagement analytics — visit patterns, campaign performance</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Customer segmentation — VIP, first-time visitor, repeat visitor</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Store-level and regional engagement insights and reporting</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Integration capabilities with existing CRM, loyalty, and POS systems</span></div>
+          <div class="tier-feature"><span class="fi">✓</span><span>Data export and reporting for retail strategy and planning teams</span></div>
+        </div>
+        <div class="tier-footer">Enterprise Intelligence — Insights &amp; Integration</div>
+      </div>
+
+    </div>
+
+    <div class="capability-note mt-10">
+      <div class="cols-2">
+        <div>
+          <h3>Progressive by Design</h3>
+          <ul class="bullet-list mt-4">
+            <li>Each tier is a <strong>superset</strong> of the tier below it — no capabilities are lost when upgrading</li>
+            <li>Retailers can begin with <strong>CONNECT</strong> and expand as engagement strategy develops</li>
+            <li>All tiers share the same <strong>consent-first architecture</strong> and brand-safe portal experience</li>
+            <li>INTELLIGENCE tier is designed for <strong>multi-location or enterprise retail chains</strong></li>
+          </ul>
+        </div>
+        <div>
+          <h3>For Shoppers Stop</h3>
+          <ul class="bullet-list mt-4">
+            <li>The <strong>ENGAGE tier</strong> is the recommended starting point — delivering the full scratch-card reward and campaign experience</li>
+            <li>The <strong>INTELLIGENCE tier</strong> is suitable for multi-store rollout across the Shoppers Stop national store network</li>
+            <li>Implementation is <strong>hardware-light</strong> — the AXIONIK system operates through the store's existing Wi-Fi access point infrastructure</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-10">
+      <div class="section-label">End-to-End Platform Flow</div>
+      <div class="axionik-flow">
+        <div class="flow-node red">Store<br>Visit</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Guest<br>Wi-Fi</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Captive<br>Portal</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node gold">Consent<br>Received</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Welcome<br>Reward</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Digital<br>Experience</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">Engagement<br>Insights</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node red">Re-<br>Engagement</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span><strong>AXIONIK</strong> — Retail Intelligence Platform</span>
+    <span>Shoppers Stop · Platform Documentation</span>
+    <span>Page 4 of 5</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PAGE 5 — VISUAL EXPERIENCE + CONCLUSION
+═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-header-brand">
+      <div class="brand-name">AXI<span>O</span>NIK</div>
+      <div class="brand-sub">Retail Intelligence Platform</div>
+    </div>
+    <div class="doc-header-meta">
+      <strong>SHOPPERS STOP</strong><br>
+      Customer Experience Journey
+    </div>
+  </div>
+
+  <div class="content-body">
+    <div class="section-label">From Connection to Experience</div>
+    <h2>The <span class="accent">Shoppers Stop</span> AXIONIK Journey</h2>
+    <p style="margin-bottom: 6pt;">One Wi-Fi connection. One continuous retail journey. The following screens represent the complete customer-facing AXIONIK experience at Shoppers Stop — from the first portal page to the in-store product discovery session.</p>
+
+    <div class="experience-frames">
+
+      <!-- Frame 1: Portal -->
+      <div class="exp-frame">
+        <div class="exp-frame-screen">
+          <div class="screen-mock">
+            <div class="sm-header"></div>
+            <div class="sm-logo-area"><div class="sm-logo-text">SHOPPERS STOP</div></div>
+            <div style="height: 4pt; background: var(--gold-light); border-radius: 2pt; border: 0.5pt solid var(--gold);"></div>
+            <div class="sm-field"></div>
+            <div class="sm-field" style="width: 70%;"></div>
+            <div class="sm-field"></div>
+            <div class="sm-btn"></div>
+          </div>
+        </div>
+        <div class="exp-frame-label">
+          <div class="exp-frame-step">Screen 1</div>
+          <div class="exp-frame-title">Wi-Fi Captive Portal</div>
+          <div class="exp-frame-desc">Branded Shoppers Stop sign-in page. Customer enters name, mobile, and email.</div>
+        </div>
+      </div>
+
+      <!-- Frame 2: Consent -->
+      <div class="exp-frame">
+        <div class="exp-frame-screen">
+          <div class="screen-mock">
+            <div class="sm-header"></div>
+            <div class="sm-logo-area"><div class="sm-logo-text">SHOPPERS STOP</div></div>
+            <div class="sm-field"></div>
+            <div class="sm-field" style="width: 80%;"></div>
+            <div style="display: flex; gap: 2pt; align-items: center; margin-top: 2pt;">
+              <div style="width: 5pt; height: 5pt; border: 1pt solid var(--red); border-radius: 1pt; background: var(--red);"></div>
+              <div style="height: 3pt; background: var(--border-light); border-radius: 1pt; flex: 1;"></div>
+            </div>
+            <div style="height: 3pt; background: var(--border-light); border-radius: 1pt; width: 60%;"></div>
+            <div class="sm-btn" style="margin-top: 2pt;"></div>
+          </div>
+        </div>
+        <div class="exp-frame-label">
+          <div class="exp-frame-step">Screen 2</div>
+          <div class="exp-frame-title">Consent &amp; Sign In</div>
+          <div class="exp-frame-desc">Explicit consent checkbox. Customer actively agrees before connecting.</div>
+        </div>
+      </div>
+
+      <!-- Frame 3: Gift Unlock -->
+      <div class="exp-frame">
+        <div class="exp-frame-screen" style="background: #FFF0F2;">
+          <div class="screen-mock">
+            <div class="sm-header" style="background: var(--gold-dark);"></div>
+            <div class="sm-logo-area" style="background: #FFF8EC;"><div class="sm-logo-text" style="color: var(--gold-dark);">🎁 GIFT UNLOCKED</div></div>
+            <div style="font-size: 5pt; text-align: center; color: var(--ink3); padding: 1pt 0;">Scratch to reveal your welcome voucher</div>
+            <div class="sm-scratch"><div class="sm-scratch-text">✦ SCRATCH ✦</div></div>
+            <div style="height: 3pt; background: var(--border-light); border-radius: 1pt; width: 70%; margin: 0 auto;"></div>
+            <div class="sm-btn gold"></div>
+          </div>
+        </div>
+        <div class="exp-frame-label">
+          <div class="exp-frame-step">Screen 3</div>
+          <div class="exp-frame-title">Welcome Gift Unlocked</div>
+          <div class="exp-frame-desc">Scratch-card interaction reveals an exclusive Shoppers Stop welcome voucher.</div>
+        </div>
+      </div>
+
+      <!-- Frame 4: Reward Revealed -->
+      <div class="exp-frame">
+        <div class="exp-frame-screen" style="background: var(--gold-light);">
+          <div class="screen-mock">
+            <div class="sm-header" style="background: var(--gold-dark);"></div>
+            <div style="text-align: center; padding: 2pt 0;">
+              <div style="font-size: 8pt; font-weight: 800; color: var(--red);">20% OFF</div>
+              <div style="font-size: 4pt; color: var(--ink3); margin-top: 1pt;">SHOPPERS STOP EXCLUSIVE</div>
+            </div>
+            <div style="background: var(--surface); border: 0.5pt solid var(--border); border-radius: 2pt; padding: 2pt; text-align: center;">
+              <div style="font-size: 5pt; font-weight: 800; font-family: monospace; color: var(--ink);">SS20WELCOME</div>
+            </div>
+            <div style="height: 3pt; background: var(--border-light); border-radius: 1pt; width: 80%; margin: 2pt auto 0;"></div>
+            <div class="sm-btn" style="margin-top: 2pt;"></div>
+          </div>
+        </div>
+        <div class="exp-frame-label">
+          <div class="exp-frame-step">Screen 4</div>
+          <div class="exp-frame-title">Voucher Revealed</div>
+          <div class="exp-frame-desc">Welcome discount and redemption code displayed. Valid for the current in-store visit.</div>
+        </div>
+      </div>
+
+      <!-- Frame 5: Product Discovery -->
+      <div class="exp-frame">
+        <div class="exp-frame-screen">
+          <div class="screen-mock">
+            <div class="sm-header"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2pt;">
+              <div style="font-size: 4pt; font-weight: 700; color: var(--ink);">SHOPPERS STOP</div>
+              <div style="font-size: 4pt; color: var(--ink3);">Bag (2)</div>
+            </div>
+            <div style="display: flex; gap: 3pt; margin-bottom: 2pt;">
+              <div style="background: var(--red); color: #FFF; font-size: 3.5pt; padding: 1pt 3pt; border-radius: 2pt; font-weight: 700;">Women</div>
+              <div style="background: var(--border-light); font-size: 3.5pt; padding: 1pt 3pt; border-radius: 2pt;">Men</div>
+              <div style="background: var(--border-light); font-size: 3.5pt; padding: 1pt 3pt; border-radius: 2pt;">Accessories</div>
+            </div>
+            <div class="sm-product-row">
+              <div class="sm-product-card"><div class="sm-product-price">₹1,499</div></div>
+              <div class="sm-product-card"><div class="sm-product-price">₹2,299</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="exp-frame-label">
+          <div class="exp-frame-step">Screen 5</div>
+          <div class="exp-frame-title">Product Discovery</div>
+          <div class="exp-frame-desc">Curated in-store product catalogue. Browse, explore, and add to bag with coupon active.</div>
+        </div>
+      </div>
+
+      <!-- Frame 6: Connected Experience -->
+      <div class="exp-frame">
+        <div class="exp-frame-screen" style="background: var(--ink);">
+          <div style="text-align: center; padding: 12pt 0;">
+            <div style="font-family: 'Outfit', sans-serif; font-size: 10pt; font-weight: 800; color: #FFFFFF; letter-spacing: 2px;">SHOPPERS</div>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 10pt; font-weight: 800; color: var(--gold); letter-spacing: 2px;">STOP</div>
+            <div style="font-size: 6pt; color: rgba(255,255,255,0.6); margin-top: 4pt; letter-spacing: 1px; text-transform: uppercase;">Connected · Engaged · Shopping</div>
+            <div style="width: 20pt; height: 1pt; background: var(--gold); margin: 6pt auto;"></div>
+            <div style="font-size: 6pt; color: rgba(255,255,255,0.5); letter-spacing: 1px;">Powered by AXIONIK</div>
+          </div>
+        </div>
+        <div class="exp-frame-label">
+          <div class="exp-frame-step">Screen 6</div>
+          <div class="exp-frame-title">Continued Engagement</div>
+          <div class="exp-frame-desc">Post-visit consent-based re-engagement. The relationship continues beyond the store visit.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="conclusion-box">
+      <h2>AXIONIK — Turning Store Wi-Fi Into a Customer Relationship</h2>
+      <p>AXIONIK connects the physical store visit with a branded, consent-driven digital experience that begins the moment a customer joins the store network. For Shoppers Stop, this means every walk-in becomes a structured opportunity to welcome, engage, reward, and retain.</p>
+      <div class="conclusion-grid">
+        <div class="conclusion-item">
+          <div class="conclusion-item-title">No App Required</div>
+          <div class="conclusion-item-desc">The complete experience is delivered through the browser at Wi-Fi login. Zero friction for the customer.</div>
+        </div>
+        <div class="conclusion-item">
+          <div class="conclusion-item-title">Consent-First</div>
+          <div class="conclusion-item-desc">Explicit consent is built into the journey before any data is captured or any communication is sent.</div>
+        </div>
+        <div class="conclusion-item">
+          <div class="conclusion-item-title">Scalable Architecture</div>
+          <div class="conclusion-item-desc">From a single store to a national retail chain — AXIONIK scales across the Shoppers Stop network.</div>
+        </div>
+        <div class="conclusion-item">
+          <div class="conclusion-item-title">Retailer in Control</div>
+          <div class="conclusion-item-desc">Campaigns, rewards, branding, and customer data are managed centrally by the retail team.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-bar">
+      <div class="cta-bar-text">Ready to bring AXIONIK to Shoppers Stop?</div>
+      <div class="cta-bar-contact">Contact: <strong>team@axionik.in</strong></div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    <span><strong>AXIONIK</strong> — Retail Intelligence Platform &nbsp;·&nbsp; Confidential &amp; Proprietary</span>
+    <span>Shoppers Stop · Platform Documentation</span>
+    <span>Page 5 of 5</span>
+  </div>
+</div>
+
+</body>
+</html>

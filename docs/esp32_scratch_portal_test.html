@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SHOPPERS STOP — Wi-Fi Portal & Stage 2 Designer Brands</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #C41E3A;
+      --primary-dark: #9E152C;
+      --secondary: #C9A96E;
+      --secondary-gold: #D4AF37;
+      --accent: #1A1A1A;
+      --bg: #FFFFFF;
+      --surface: #F8F7F5;
+      --card-bg: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B6B6B;
+      --text-muted: #9B9B9B;
+      --success: #2E7D32;
+      --border: #E8E8E8;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: SFMono-Regular, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--surface);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .view-section {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* --- Sign-In Card --- */
+    .signin-card {
+      background: var(--card-bg);
+      width: 100%;
+      border-radius: 16px;
+      padding: 36px 28px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signin-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+
+    .brand-logo {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+
+    .brand-tagline {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--secondary);
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .signin-title {
+      font-size: 22px;
+      font-family: var(--font-heading);
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .signin-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .phone-prefix {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text-primary);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-input.has-prefix {
+      padding-left: 54px;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      background: #FFFFFF;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(196, 30, 58, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* --- SCRATCH CARD MODAL --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .coupon-card-modal {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+      border-top: 5px solid var(--primary);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .coupon-header-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .coupon-header-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+    }
+
+    .scratch-container {
+      position: relative;
+      width: 290px;
+      height: 150px;
+      margin: 0 auto 16px auto;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      user-select: none;
+    }
+
+    .scratch-reward {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #FFFFFF;
+      border: 2px dashed var(--secondary);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .reward-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--secondary);
+      text-transform: uppercase;
+    }
+
+    .reward-discount {
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--primary);
+      font-family: var(--font-heading);
+      line-height: 1;
+      margin: 4px 0;
+    }
+
+    .reward-code {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--surface);
+      padding: 4px 14px;
+      border-radius: 6px;
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    #scratchCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      cursor: pointer;
+      touch-action: none;
+      z-index: 2;
+    }
+
+    .btn-copy {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-copy.copied {
+      background: #E8F5E9;
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    /* --- STAGE 2: BRAND CAROUSEL & NEW ARRIVALS --- */
+    #shopView {
+      display: none;
+    }
+
+    .shop-header {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .user-greeting {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .wifi-status-tag {
+      background: #E8F5E9;
+      color: var(--success);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .brand-section-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Horizontal Brand Ribbon Bar */
+    .brand-ribbon {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+      margin-bottom: 20px;
+    }
+
+    .brand-ribbon::-webkit-scrollbar { display: none; }
+
+    .brand-chip {
+      flex: 0 0 auto;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+
+    .brand-chip.active, .brand-chip:hover {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* New Arrivals Grid */
+    .arrivals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .product-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .badge-tag {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: var(--primary);
+      color: #FFF;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      z-index: 2;
+    }
+
+    .badge-tag.discount {
+      background: var(--secondary-gold);
+      color: #000;
+    }
+
+    .product-image-box {
+      height: 100px;
+      background: var(--surface);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: var(--secondary);
+      margin-bottom: 10px;
+    }
+
+    .product-brand-name {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .product-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 2px 0 6px;
+      line-height: 1.3;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: auto;
+    }
+
+    .price-current {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .price-original {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STAGE 1: SIGNIN SCREEN -->
+  <div class="view-section" id="signinView">
+    <div class="signin-card">
+      <div class="brand-logo">SHOPPERS STOP</div>
+      <div class="brand-tagline">Start Something New</div>
+      
+      <h2 class="signin-title">Connect & Get Reward</h2>
+      <p class="signin-subtitle">Enter your name & mobile number to unlock instant Wi-Fi access & your shopping voucher.</p>
+      
+      <form id="signinForm" onsubmit="handleSignin(event)">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="custName" placeholder="e.g. Kavya Sharma" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mobile Number</label>
+          <div class="input-wrapper">
+            <span class="phone-prefix">+91</span>
+            <input type="tel" class="form-input has-prefix" id="custPhone" placeholder="10-digit number" pattern="[0-9]{10}" required>
+          </div>
+        </div>
+
+        <div class="checkbox-group" style="display:flex; align-items:flex-start; gap:10px; text-align:left; margin-bottom:20px;">
+          <input type="checkbox" id="ageConsent" required style="margin-top:3px; accent-color:var(--primary); width:16px; height:16px; cursor:pointer;">
+          <label for="ageConsent" style="font-size:12px; color:var(--text-secondary); line-height:1.4; cursor:pointer;">
+            I confirm that I am 21 years of age or older and agree to Terms & Conditions.
+          </label>
+        </div>
+
+        <button type="submit" class="btn">CONNECT WI-FI</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRATCH CARD MODAL -->
+  <div class="modal-overlay" id="scratchModal">
+    <div class="coupon-card-modal">
+      <div class="coupon-header-title">Congratulations! 🎉</div>
+      <div class="coupon-header-subtitle">Scratch below to reveal your exclusive Shoppers Stop voucher</div>
+
+      <div class="scratch-container" id="scratchBox">
+        <div class="scratch-reward">
+          <span class="reward-tag">VIP SHOPPING VOUCHER</span>
+          <span class="reward-discount">25% OFF</span>
+          <span class="reward-code" id="couponCode">SS-VIP25</span>
+        </div>
+        <canvas id="scratchCanvas"></canvas>
+      </div>
+
+      <button class="btn-copy" id="copyBtn" onclick="copyCouponCode()">
+        📋 Copy Voucher Code
+      </button>
+
+      <button class="btn btn-continue" style="margin-top:12px;" onclick="goToShopView()">
+        Explore New Arrivals & Brands →
+      </button>
+    </div>
+  </div>
+
+  <!-- STAGE 2: DESIGNER BRANDS & NEW ARRIVALS -->
+  <div class="view-section" id="shopView">
+    
+    <div class="shop-header">
+      <div>
+        <div class="user-greeting" id="greetingText">Welcome, Guest!</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Your Wi-Fi is Active & Connected</div>
+      </div>
+      <span class="wifi-status-tag">⚡ Wi-Fi 5G Active</span>
+    </div>
+
+    <!-- Designer Brand Ribbon Bar -->
+    <div class="brand-section-title">
+      <i class="fa-solid fa-shirt" style="color:var(--primary);"></i> Designer Brands & Stores
+    </div>
+
+    <div class="brand-ribbon">
+      <div class="brand-chip active" onclick="filterBrand('all', this)">All Brands</div>
+      <div class="brand-chip" onclick="filterBrand('levis', this)"><i class="fa-solid fa-tag"></i> Levi's</div>
+      <div class="brand-chip" onclick="filterBrand('gucci', this)"><i class="fa-solid fa-gem"></i> Gucci</div>
+      <div class="brand-chip" onclick="filterBrand('prada', this)"><i class="fa-solid fa-crown"></i> Prada</div>
+      <div class="brand-chip" onclick="filterBrand('zara', this)"><i class="fa-solid fa-bag-shopping"></i> Zara</div>
+      <div class="brand-chip" onclick="filterBrand('nike', this)"><i class="fa-solid fa-shoe-prints"></i> Nike</div>
+      <div class="brand-chip" onclick="filterBrand('tommy', this)"><i class="fa-solid fa-star"></i> Tommy Hilfiger</div>
+      <div class="brand-chip" onclick="filterBrand('puma', this)"><i class="fa-solid fa-bolt"></i> Puma</div>
+      <div class="brand-chip" onclick="filterBrand('ck', this)"><i class="fa-solid fa-feather"></i> Calvin Klein</div>
+    </div>
+
+    <!-- Filterable New Arrivals & Deals Grid -->
+    <div class="brand-section-title" style="margin-top:10px;">
+      <i class="fa-solid fa-fire" style="color:var(--secondary-gold);"></i> New Arrivals & Ongoing Discounts
+    </div>
+
+    <div class="arrivals-grid" id="arrivalsGrid">
+      <!-- Levi's 1 -->
+      <div class="product-card" data-brand="levis">
+        <span class="badge-tag">NEW ARRIVAL</span>
+        <div class="product-image-box"><i class="fa-solid fa-shirt"></i></div>
+        <div class="product-brand-name">Levi's</div>
+        <div class="product-item-title">501 Original Denim Jacket</div>
+        <div class="price-row">
+          <span class="price-current">₹3,499</span>
+          <span class="price-original">₹4,999</span>
+        </div>
+      </div>
+
+      <!-- Gucci 1 -->
+      <div class="product-card" data-brand="gucci">
+        <span class="badge-tag discount">25% OFF</span>
+        <div class="product-image-box"><i class="fa-solid fa-glasses"></i></div>
+        <div class="product-brand-name">Gucci</div>
+        <div class="product-item-title">Signature Acetate Sunglasses</div>
+        <div class="price-row">
+          <span class="price-current">₹18,500</span>
+          <span class="price-original">₹24,000</span>
+        </div>
+      </div>
+
+      <!-- Prada 1 -->
+      <div class="product-card" data-brand="prada">
+        <span class="badge-tag">NEW ARRIVAL</span>
+        <div class="product-image-box"><i class="fa-solid fa-briefcase"></i></div>
+        <div class="product-brand-name">Prada</div>
+        <div class="product-item-title">Saffiano Leather Tote Bag</div>
+        <div class="price-row">
+          <span class="price-current">₹42,000</span>
+          <span class="price-original">₹49,900</span>
+        </div>
+      </div>
+
+      <!-- Zara 1 -->
+      <div class="product-card" data-brand="zara">
+        <span class="badge-tag discount">HOT DEAL</span>
+        <div class="product-image-box"><i class="fa-solid fa-vest"></i></div>
+        <div class="product-brand-name">Zara</div>
+        <div class="product-item-title">Textured Tailored Blazer</div>
+        <div class="price-row">
+          <span class="price-current">₹4,590</span>
+          <span class="price-original">₹6,990</span>
+        </div>
+      </div>
+
+      <!-- Nike 1 -->
+      <div class="product-card" data-brand="nike">
+        <span class="badge-tag">NEW ARRIVAL</span>
+        <div class="product-image-box"><i class="fa-solid fa-shoe-prints"></i></div>
+        <div class="product-brand-name">Nike</div>
+        <div class="product-item-title">Air Max 270 Sneakers</div>
+        <div class="price-row">
+          <span class="price-current">₹8,995</span>
+          <span class="price-original">₹11,995</span>
+        </div>
+      </div>
+
+      <!-- Tommy Hilfiger 1 -->
+      <div class="product-card" data-brand="tommy">
+        <span class="badge-tag discount">30% OFF</span>
+        <div class="product-image-box"><i class="fa-solid fa-clock"></i></div>
+        <div class="product-brand-name">Tommy Hilfiger</div>
+        <div class="product-item-title">Stainless Steel Chronograph</div>
+        <div class="price-row">
+          <span class="price-current">₹9,450</span>
+          <span class="price-original">₹13,500</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentCustomer = {};
+
+    function handleSignin(e) {
+      e.preventDefault();
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+
+      currentCustomer = { name, phone };
+
+      // Open Scratch Modal
+      document.getElementById('scratchModal').classList.add('active');
+      initScratchCanvas();
+
+      // Submit checkin payload to backend
+      fetch('/api/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, code: 'SS-VIP25', discount: 25, source: 'wifi_portal' })
+      }).catch(err => console.log('Offline/local mode'));
+    }
+
+    function initScratchCanvas() {
+      const box = document.getElementById('scratchBox');
+      const canvas = document.getElementById('scratchCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = box.offsetWidth;
+      canvas.height = box.offsetHeight;
+
+      // Draw Scratch Overlay
+      ctx.fillStyle = '#C9A96E'; // Gold Metallic
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 13px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ SCRATCH WITH FINGER OR MOUSE ✨', canvas.width / 2, canvas.height / 2 + 5);
+
+      let scratching = false;
+
+      function scratch(e) {
+        if (!scratching) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 22, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      canvas.addEventListener('mousedown', () => scratching = true);
+      canvas.addEventListener('mouseup', () => scratching = false);
+      canvas.addEventListener('mousemove', scratch);
+
+      canvas.addEventListener('touchstart', () => scratching = true);
+      canvas.addEventListener('touchend', () => scratching = false);
+      canvas.addEventListener('touchmove', scratch);
+    }
+
+    function copyCouponCode() {
+      const code = document.getElementById('couponCode').innerText;
+      navigator.clipboard.writeText(code);
+
+      const copyBtn = document.getElementById('copyBtn');
+      copyBtn.classList.add('copied');
+      copyBtn.innerHTML = '✅ Copied to Clipboard!';
+
+      // Log coupon utilization event
+      fetch('/api/coupon-claimed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: currentCustomer.phone, code: code, status: 'utilized' })
+      }).catch(e => {});
+    }
+
+    function goToShopView() {
+      document.getElementById('scratchModal').classList.remove('active');
+      document.getElementById('signinView').style.display = 'none';
+      document.getElementById('shopView').style.display = 'block';
+
+      if (currentCustomer.name) {
+        document.getElementById('greetingText').innerText = 'Welcome, ' + currentCustomer.name + '!';
+      }
+    }
+
+    function filterBrand(brand, el) {
+      document.querySelectorAll('.brand-chip').forEach(chip => chip.classList.remove('active'));
+      el.classList.add('active');
+
+      document.querySelectorAll('.product-card').forEach(card => {
+        if (brand === 'all' || card.dataset.brand === brand) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

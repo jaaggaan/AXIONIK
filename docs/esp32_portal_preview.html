@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHOPPERS STOP — Free VIP Wi-Fi & Exclusive Rewards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #C41E3A;       /* Shoppers Stop Signature Red */
+      --primary-dark: #9E152D;
+      --gold: #D4AF37;
+      --gold-light: #F9F1D8;
+      --bg: #0F0F12;            /* Luxury Dark Mode */
+      --card-bg: #18181E;
+      --card-border: #2A2A35;
+      --text: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --accent-green: #10B981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 40px;
+      overflow-x: hidden;
+    }
+
+    /* --- Header & Brand Bar --- */
+    header {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(196,30,58,0.2) 0%, rgba(15,15,18,0) 100%);
+      padding: 24px 20px 16px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #FFF;
+      text-transform: uppercase;
+    }
+
+    .brand-title span { color: var(--primary); }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--gold);
+      margin-top: 4px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+    }
+
+    /* --- Step Cards --- */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .step-badge {
+      display: inline-block;
+      background: rgba(196,30,58,0.15);
+      color: var(--primary);
+      border: 1px solid rgba(196,30,58,0.3);
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    p.desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* --- Form Elements --- */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 14px 16px;
+      background: #0B0B0E;
+      border: 1px solid #333340;
+      border-radius: 12px;
+      color: #FFF;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #FFF;
+      border: none;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(196,30,58,0.4);
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    /* --- Scratch Card Section --- */
+    #scratchSection {
+      display: none;
+      text-align: center;
+    }
+
+    .scratch-container {
+      position: relative;
+      width: 100%;
+      height: 160px;
+      margin: 16px 0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      user-select: none;
+    }
+
+    .coupon-revealed {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1C1917 0%, #292524 100%);
+      border: 2px dashed var(--gold);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .coupon-code {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 3px;
+      margin: 8px 0;
+    }
+
+    .coupon-desc {
+      font-size: 12px;
+      color: #D1D5DB;
+    }
+
+    canvas#scratchCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .copy-btn {
+      background: rgba(212,175,55,0.15);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--gold);
+      color: #000;
+    }
+
+    /* --- Designer Brands Marquee --- */
+    .brands-section {
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .brand-carousel {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+
+    .brand-carousel::-webkit-scrollbar { display: none; }
+
+    .brand-chip {
+      flex: 0 0 auto;
+      background: #1E1E26;
+      border: 1px solid #333342;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #E5E7EB;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .brand-chip.active, .brand-chip:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFF;
+      box-shadow: 0 4px 12px rgba(196,30,58,0.4);
+    }
+
+    /* --- New Arrivals & Discounts Grid --- */
+    .arrivals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .product-card {
+      background: #16161D;
+      border: 1px solid #282834;
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .tag-badge {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: var(--primary);
+      color: #FFF;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .tag-badge.discount {
+      background: var(--gold);
+      color: #000;
+    }
+
+    .product-icon {
+      height: 90px;
+      background: #20202B;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+
+    .product-brand {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .product-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 2px 0 6px;
+      color: #FFF;
+      line-height: 1.3;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .curr-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--accent-green);
+    }
+
+    .orig-price {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    /* --- Push Notification Toast & Review Modal --- */
+    .notif-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      width: calc(100% - 40px);
+      max-width: 440px;
+      background: linear-gradient(135deg, #1F1F28 0%, #2A2A38 100%);
+      border: 1px solid var(--gold);
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 100;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .notif-toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .notif-info h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #FFF;
+    }
+
+    .notif-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .btn-review-trigger {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* --- Review Modal Popup --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+    }
+
+    .modal-content {
+      background: #181822;
+      border: 1px solid #333342;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 28px;
+      text-align: center;
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: none; border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .rate-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .rate-btn {
+      flex: 1;
+      background: #222230;
+      border: 2px solid #333346;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 32px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rate-btn span {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .rate-btn.selected.like {
+      background: rgba(16,185,129,0.15);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .rate-btn.selected.dislike {
+      background: rgba(239,68,68,0.15);
+      border-color: #EF4444;
+      color: #EF4444;
+    }
+
+    textarea#feedbackText {
+      width: 100%;
+      height: 90px;
+      background: #0F0F16;
+      border: 1px solid #333346;
+      border-radius: 12px;
+      padding: 12px;
+      color: #FFF;
+      font-family: inherit;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      margin-bottom: 16px;
+    }
+
+    textarea:focus { border-color: var(--primary); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-title">SHOPPERS <span>STOP</span></div>
+    <div class="subtitle"><i class="fa-solid fa-wifi"></i> VIP FAST-CONNECT & REWARDS PORTAL</div>
+  </header>
+
+  <div class="container">
+
+    <!-- STEP 1: Registration Form -->
+    <div class="card" id="loginCard">
+      <span class="step-badge">Step 1 of 2 • Connect Wi-Fi</span>
+      <h2>Welcome to Shoppers Stop</h2>
+      <p class="desc">Enter your details to unlock high-speed Wi-Fi & your instant shopping voucher!</p>
+
+      <form id="wifiForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="custName" placeholder="e.g. Kavya Sharma" required>
+        </div>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="tel" id="custPhone" placeholder="e.g. 9876543210" pattern="[0-9]{10}" required>
+        </div>
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-bolt"></i> Connect Wi-Fi & Get Voucher
+        </button>
+      </form>
+    </div>
+
+    <!-- STEP 2: Scratch Card & Coupon Section -->
+    <div class="card" id="scratchSection">
+      <span class="step-badge">Step 2 of 2 • Exclusive Reward</span>
+      <h2>Scratch & Win Your Voucher!</h2>
+      <p class="desc">Drag or touch below to reveal your store discount code.</p>
+
+      <div class="scratch-container" id="scratchContainer">
+        <div class="coupon-revealed">
+          <i class="fa-solid fa-gift" style="font-size: 24px; color: var(--gold);"></i>
+          <div class="coupon-code" id="couponCode">SS-VIP25</div>
+          <div class="coupon-desc">25% OFF on Levi's, Gucci & New Arrivals!</div>
+        </div>
+        <canvas id="scratchCanvas"></canvas>
+      </div>
+
+      <button class="copy-btn" id="copyBtn" onclick="copyCouponCode()">
+        <i class="fa-regular fa-copy"></i> Copy Voucher Code
+      </button>
+    </div>
+
+    <!-- BRANDS CAROUSEL -->
+    <div class="brands-section">
+      <div class="section-header">
+        <div class="section-title"><i class="fa-solid fa-shirt"></i> Luxury & Designer Brands</div>
+      </div>
+      <div class="brand-carousel">
+        <div class="brand-chip active" onclick="filterBrand('all', this)">All Brands</div>
+        <div class="brand-chip" onclick="filterBrand('levis', this)"><i class="fa-solid fa-tag"></i> Levi's</div>
+        <div class="brand-chip" onclick="filterBrand('gucci', this)"><i class="fa-solid fa-gem"></i> Gucci</div>
+        <div class="brand-chip" onclick="filterBrand('prada', this)"><i class="fa-solid fa-crown"></i> Prada</div>
+        <div class="brand-chip" onclick="filterBrand('zara', this)"><i class="fa-solid fa-bag-shopping"></i> Zara</div>
+        <div class="brand-chip" onclick="filterBrand('nike', this)"><i class="fa-solid fa-shoe-prints"></i> Nike</div>
+        <div class="brand-chip" onclick="filterBrand('tommy', this)"><i class="fa-solid fa-star"></i> Tommy Hilfiger</div>
+        <div class="brand-chip" onclick="filterBrand('puma', this)"><i class="fa-solid fa-bolt"></i> Puma</div>
+      </div>
+    </div>
+
+    <!-- NEW ARRIVALS & OFFERS GRID -->
+    <div class="section-header" style="margin-top: 10px;">
+      <div class="section-title"><i class="fa-solid fa-fire"></i> New Arrivals & Ongoing Deals</div>
+    </div>
+    
+    <div class="arrivals-grid" id="arrivalsGrid">
+      <!-- Product 1 -->
+      <div class="product-card" data-brand="levis">
+        <span class="tag-badge">NEW ARRIVAL</span>
+        <div class="product-icon"><i class="fa-solid fa-vest font-icon"></i></div>
+        <div class="product-brand">Levi's</div>
+        <div class="product-title">501 Original Denim Jacket</div>
+        <div class="price-row">
+          <span class="curr-price">₹3,499</span>
+          <span class="orig-price">₹4,999</span>
+        </div>
+      </div>
+
+      <!-- Product 2 -->
+      <div class="product-card" data-brand="gucci">
+        <span class="tag-badge discount">25% OFF</span>
+        <div class="product-icon"><i class="fa-solid fa-glasses"></i></div>
+        <div class="product-brand">Gucci</div>
+        <div class="product-title">Signature Acetate Sunglasses</div>
+        <div class="price-row">
+          <span class="curr-price">₹18,500</span>
+          <span class="orig-price">₹24,000</span>
+        </div>
+      </div>
+
+      <!-- Product 3 -->
+      <div class="product-card" data-brand="prada">
+        <span class="tag-badge">EXCLUSIVE</span>
+        <div class="product-icon"><i class="fa-solid fa-briefcase"></i></div>
+        <div class="product-brand">Prada</div>
+        <div class="product-title">Leather Saffiano Handbag</div>
+        <div class="price-row">
+          <span class="curr-price">₹45,000</span>
+          <span class="orig-price">₹52,000</span>
+        </div>
+      </div>
+
+      <!-- Product 4 -->
+      <div class="product-card" data-brand="nike">
+        <span class="tag-badge discount">HOT DEAL</span>
+        <div class="product-icon"><i class="fa-solid fa-shoe-prints"></i></div>
+        <div class="product-brand">Nike</div>
+        <div class="product-title">Air Max 270 Sneakers</div>
+        <div class="price-row">
+          <span class="curr-price">₹8,995</span>
+          <span class="orig-price">₹11,995</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PUSH NOTIFICATION TOAST -->
+  <div class="notif-toast" id="notifToast">
+    <div class="notif-info">
+      <h4><i class="fa-solid fa-bell" style="color:var(--gold);"></i> How's your Wi-Fi experience?</h4>
+      <p>Give us a 5-second store review!</p>
+    </div>
+    <button class="btn-review-trigger" onclick="openReviewModal()">Rate Now</button>
+  </div>
+
+  <!-- REVIEW MODAL -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal-content">
+      <button class="close-modal" onclick="closeReviewModal()">&times;</button>
+      <h3 style="font-family:'Outfit'; font-size:20px; margin-bottom:6px;">Store & Wi-Fi Feedback</h3>
+      <p style="font-size:13px; color:var(--text-muted);">Did you enjoy your shopping session today?</p>
+
+      <div class="rate-buttons">
+        <div class="rate-btn like" onclick="selectRating('like', this)">
+          <i class="fa-solid fa-thumbs-up"></i>
+          <span>Liked it!</span>
+        </div>
+        <div class="rate-btn dislike" onclick="selectRating('dislike', this)">
+          <i class="fa-solid fa-thumbs-down"></i>
+          <span>Needs Work</span>
+        </div>
+      </div>
+
+      <textarea id="feedbackText" placeholder="Add optional comments (e.g. Wi-Fi speed, staff service)..."></textarea>
+      <button class="btn-submit" onclick="submitReview()">Submit Feedback</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedRating = '';
+    let currentCustomer = {};
+
+    // 1. Handle Registration
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('custName').value;
+      const phone = document.getElementById('custPhone').value;
+      currentCustomer = { name, phone };
+
+      // Hide login, show scratch card
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('scratchSection').style.display = 'block';
+
+      initScratchCard();
+
+      // Post registration to backend API
+      fetch('/api/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, code: 'SS-VIP25', discount: 25, source: 'wifi_portal' })
+      }).catch(err => console.log('Portal sync offline mode'));
+
+      // Trigger review toast after 6 seconds
+      setTimeout(() => {
+        document.getElementById('notifToast').classList.add('show');
+      }, 6000);
+    }
+
+    // 2. Scratch Card Logic
+    function initScratchCard() {
+      const container = document.getElementById('scratchContainer');
+      const canvas = document.getElementById('scratchCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = container.offsetWidth;
+      canvas.height = container.offsetHeight;
+
+      // Draw metallic scratch cover
+      ctx.fillStyle = '#4A4A5A';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#D4AF37';
+      ctx.font = 'bold 15px Outfit';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ SCRATCH HERE WITH FINGER / MOUSE ✨', canvas.width / 2, canvas.height / 2 + 5);
+
+      let isScratching = false;
+
+      function scratch(e) {
+        if (!isScratching) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 24, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      canvas.addEventListener('mousedown', () => isScratching = true);
+      canvas.addEventListener('mouseup', () => isScratching = false);
+      canvas.addEventListener('mousemove', scratch);
+
+      canvas.addEventListener('touchstart', () => isScratching = true);
+      canvas.addEventListener('touchend', () => isScratching = false);
+      canvas.addEventListener('touchmove', scratch);
+    }
+
+    // 3. Copy Coupon Code
+    function copyCouponCode() {
+      const code = document.getElementById('couponCode').innerText;
+      navigator.clipboard.writeText(code);
+
+      const copyBtn = document.getElementById('copyBtn');
+      copyBtn.innerHTML = '<i class="fa-solid fa-check" style="color:var(--accent-green)"></i> Copied to Clipboard!';
+      copyBtn.style.borderColor = 'var(--accent-green)';
+
+      // Send Coupon Utilization event to Backend
+      fetch('/api/coupon-claimed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: currentCustomer.phone, code: code, status: 'utilized' })
+      }).catch(e => {});
+    }
+
+    // 4. Brand Filtering
+    function filterBrand(brand, el) {
+      document.querySelectorAll('.brand-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+
+      document.querySelectorAll('.product-card').forEach(card => {
+        if (brand === 'all' || card.dataset.brand === brand) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // 5. Review & Rating Modal Logic
+    function openReviewModal() {
+      document.getElementById('notifToast').classList.remove('show');
+      document.getElementById('reviewModal').style.display = 'flex';
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').style.display = 'none';
+    }
+
+    function selectRating(type, el) {
+      selectedRating = type;
+      document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function submitReview() {
+      const comment = document.getElementById('feedbackText').value;
+      if (!selectedRating) {
+        alert('Please select Thumbs Up or Thumbs Down!');
+        return;
+      }
+
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: currentCustomer.phone || 'Anonymous',
+          rating: selectedRating,
+          comment: comment,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(e => {});
+
+      alert('Thank you for rating your Shoppers Stop experience!');
+      closeReviewModal();
+    }
+  </script>
+</body>
+</html>
