@@ -40,13 +40,26 @@ def init_firebase() -> None:
             firebase_ready = True
             return
 
-        cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH", FIREBASE_KEY_PATH)
-        if os.path.isfile(cred_path):
-            cred = credentials.Certificate(cred_path)
+        candidate_paths = [
+            os.environ.get("FIREBASE_CREDENTIALS_PATH"),
+            FIREBASE_KEY_PATH,
+            os.path.join("backend", "firebase-key.json"),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "firebase-key.json")),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "firebase-key.json")),
+        ]
+        
+        target_path = None
+        for p in candidate_paths:
+            if p and os.path.isfile(p):
+                target_path = p
+                break
+
+        if target_path:
+            cred = credentials.Certificate(target_path)
             firebase_admin.initialize_app(cred)
             db = firestore.client()
             firebase_ready = True
-            logger.info("Firebase Admin SDK & Firestore client initialized successfully")
+            logger.info("🔥 Firebase Admin SDK & Firestore client initialized successfully from %s", target_path)
         else:
             logger.warning("Firebase key file missing — running with local memory database fallback")
     except Exception as exc:
@@ -96,12 +109,24 @@ def db_get_customer(user_id: str) -> dict[str, Any] | None:
 
 
 def db_list_customers() -> list[dict[str, Any]]:
-    """Lists all customer profile directories."""
+    """Lists all customer profile directories with newest checkins first."""
     if db is not None:
-        docs = db.collection("customers").get()
-        for doc in docs:
-            _customers_cache[doc.id] = doc.to_dict() or {}
-    return list(_customers_cache.values())
+        try:
+            docs = db.collection("customers").get()
+            for doc in docs:
+                if doc.id not in _customers_cache:
+                    _customers_cache[doc.id] = doc.to_dict() or {}
+        except Exception as exc:
+            logger.warning("Firestore list customers error (using memory cache): %s", exc)
+    
+    def get_timestamp(c: dict[str, Any]) -> str:
+        raw = str(c.get("registered_at") or c.get("last_seen") or c.get("last_visit") or "")
+        if c.get("source") == "wifi_portal":
+            return "9999-" + raw
+        return raw
+
+    custs = list(_customers_cache.values())
+    return sorted(custs, key=get_timestamp, reverse=True)
 
 # ---------------------------------------------------------------------------
 # Visits
@@ -110,7 +135,10 @@ def db_list_customers() -> list[dict[str, Any]]:
 def db_save_visit(visit_data: dict[str, Any]) -> dict[str, Any]:
     """Saves a client check-in visit to database."""
     if db is not None:
-        db.collection("visits").add(visit_data)
+        try:
+            db.collection("visits").add(visit_data)
+        except Exception as exc:
+            logger.warning("Firestore save visit error: %s", exc)
     _visits_cache.append(visit_data)
     return visit_data
 
@@ -118,13 +146,19 @@ def db_save_visit(visit_data: dict[str, Any]) -> dict[str, Any]:
 def db_list_visits() -> list[dict[str, Any]]:
     """Lists recent check-in activities."""
     if db is not None:
-        docs = (
-            db.collection("visits")
-            .order_by("timestamp", direction=firestore.Query.DESCENDING)
-            .limit(100)
-            .get()
-        )
-        return [serialize_doc(doc.to_dict() or {}) for doc in docs]
+        try:
+            docs = (
+                db.collection("visits")
+                .order_by("timestamp", direction=firestore.Query.DESCENDING)
+                .limit(100)
+                .get()
+            )
+            for doc in docs:
+                d = serialize_doc(doc.to_dict() or {})
+                if d and not any(v.get("user_id") == d.get("user_id") and v.get("timestamp") == d.get("timestamp") for v in _visits_cache):
+                    _visits_cache.append(d)
+        except Exception as exc:
+            logger.warning("Firestore list visits error: %s", exc)
     return sorted(_visits_cache, key=lambda x: x.get("timestamp", ""), reverse=True)
 
 # ---------------------------------------------------------------------------
@@ -151,3 +185,62 @@ def db_get_purchase(purchase_id: str) -> dict[str, Any] | None:
             _purchases_cache[purchase_id] = data
             return data
     return None
+
+
+# ---------------------------------------------------------------------------
+# Coupon Claims & Feedback
+# ---------------------------------------------------------------------------
+
+_coupons_cache: list[dict[str, Any]] = []
+_feedback_cache: list[dict[str, Any]] = []
+
+
+def db_save_coupon_claim(claim_data: dict[str, Any]) -> dict[str, Any]:
+    """Saves a coupon utilization claim to Firestore."""
+    if db is not None:
+        try:
+            db.collection("coupons").add(claim_data)
+        except Exception as exc:
+            logger.warning("Firestore save coupon claim error: %s", exc)
+    _coupons_cache.append(claim_data)
+    return claim_data
+
+
+def db_list_coupons() -> list[dict[str, Any]]:
+    """Lists all coupon claims."""
+    if db is not None:
+        try:
+            docs = db.collection("coupons").get()
+            for doc in docs:
+                d = doc.to_dict() or {}
+                if d and d not in _coupons_cache:
+                    _coupons_cache.append(d)
+        except Exception as exc:
+            logger.warning("Firestore list coupons error: %s", exc)
+    return _coupons_cache
+
+
+def db_save_feedback(feedback_data: dict[str, Any]) -> dict[str, Any]:
+    """Saves a rating & feedback comment to Firestore."""
+    if db is not None:
+        try:
+            db.collection("feedback").add(feedback_data)
+        except Exception as exc:
+            logger.warning("Firestore save feedback error: %s", exc)
+    _feedback_cache.append(feedback_data)
+    return feedback_data
+
+
+def db_list_feedback() -> list[dict[str, Any]]:
+    """Lists all customer reviews and ratings."""
+    if db is not None:
+        try:
+            docs = db.collection("feedback").get()
+            for doc in docs:
+                d = doc.to_dict() or {}
+                if d and d not in _feedback_cache:
+                    _feedback_cache.append(d)
+        except Exception as exc:
+            logger.warning("Firestore list feedback error: %s", exc)
+    return _feedback_cache
+
