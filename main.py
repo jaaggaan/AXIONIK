@@ -47,6 +47,8 @@ firebase_ready = False
 _customers_cache: dict[str, dict[str, Any]] = {}
 _visits_cache: list[dict[str, Any]] = []
 _purchases_cache: dict[str, dict[str, Any]] = {}
+_orders_cache: list[dict[str, Any]] = []
+_redemptions_cache: list[dict[str, Any]] = []
 _feedbacks_cache: list[dict[str, Any]] = [
     {
         "id": "REV-1001",
@@ -490,39 +492,278 @@ async def create_coupon(body: CouponPayload) -> dict[str, Any]:
             logger.error("Firestore coupon save error: %s", e)
     return {"success": True, "coupon": c}
 
+
+# ---------------------------------------------------------------------------
+# Order Processing & MCP Integration Engine (Claude / Axionik Marketplace)
+# ---------------------------------------------------------------------------
+
+def process_live_order(body: dict[str, Any]) -> dict[str, Any]:
+    """Process an order from Captive Portal, Dashboard, or Claude MCP Connector."""
+    import uuid
+    order_id = body.get("orderId") or body.get("order_id") or f"SS-ORD-{uuid.uuid4().hex[:6].upper()}"
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    user_info = body.get("user") or {}
+    cust_name = user_info.get("name") or body.get("customerName") or "Shoppers Stop Guest"
+    cust_phone = user_info.get("phone") or body.get("customerPhone") or "+91 98201 00000"
+    cust_email = user_info.get("email") or body.get("customerEmail") or "guest@shoppersstop.com"
+    
+    items = body.get("items", [])
+    order_total = body.get("finalTotal") or body.get("totalAmount") or sum(i.get("price", 0) * i.get("qty", 1) for i in items) or 2499.0
+    coupon_code = (body.get("couponCode") or body.get("coupon") or "").strip().upper()
+    discount_saved = body.get("discountSaved") or (order_total * 0.15 if coupon_code else 0.0)
+    store_loc = body.get("storeLocation") or "Mumbai - Malad West Flagship"
+
+    # 1. Update or create Customer profile
+    user_id = f"cust_{str(cust_phone).replace('+', '').replace(' ', '')}"
+    cust = db_get_customer(user_id)
+    if not cust:
+        cust = {
+            "user_id": user_id,
+            "customer_id": user_id,
+            "name": cust_name,
+            "email": cust_email,
+            "phone": cust_phone,
+            "vip_tier": "Silver",
+            "total_spend": 0.0,
+            "points": 0,
+            "created_at": now_str
+        }
+    
+    new_spend = round(cust.get("total_spend", 0.0) + order_total, 2)
+    cust["user_id"] = user_id
+    cust["total_spend"] = new_spend
+    cust["vip_tier"] = calculate_vip_tier(new_spend)
+    cust["points"] = cust.get("points", 0) + int(order_total * 0.1)
+    db_save_customer(cust)
+
+    # 2. Create Order Record
+    order_record = {
+        "id": order_id,
+        "orderId": order_id,
+        "customerName": cust_name,
+        "customerPhone": cust_phone,
+        "customerEmail": cust_email,
+        "items": items,
+        "totalAmount": order_total,
+        "couponCode": coupon_code,
+        "discountSaved": discount_saved,
+        "status": "Completed",
+        "orderDate": now_str,
+        "storeLocation": store_loc,
+        "channel": body.get("channel", "Online / MCP Connector")
+    }
+
+    _orders_cache.insert(0, order_record)
+    if db is not None:
+        try:
+            db.collection("orders").document(order_id).set(order_record)
+        except Exception as e:
+            logger.error("Firestore order save error: %s", e)
+
+    # 3. Process Coupon Redemption if applicable
+    if coupon_code:
+        redemption_id = f"RED-{uuid.uuid4().hex[:6].upper()}"
+        redemption_record = {
+            "id": redemption_id,
+            "couponCode": coupon_code,
+            "customerName": cust_name,
+            "customerEmail": cust_email,
+            "customerPhone": cust_phone,
+            "loyaltyTier": cust.get("vip_tier", "Silver"),
+            "orderId": order_id,
+            "orderTotal": order_total,
+            "discountSaved": discount_saved,
+            "redeemedAt": now_str,
+            "storeLocation": store_loc
+        }
+        _redemptions_cache.insert(0, redemption_record)
+        
+        # Increment usage on coupon cache
+        for c in _coupons_cache:
+            if c.get("code", "").upper() == coupon_code:
+                c["usageCount"] = c.get("usageCount", 0) + 1
+                if "redemptions" not in c:
+                    c["redemptions"] = []
+                c["redemptions"].insert(0, redemption_record)
+
+        if db is not None:
+            try:
+                db.collection("redemptions").document(redemption_id).set(redemption_record)
+            except Exception as e:
+                logger.error("Firestore redemption save error: %s", e)
+
+    return {"status": "ok", "order_id": order_id, "order": order_record, "customer": cust}
+
+
 @app.post("/api/order")
 async def place_order(body: dict[str, Any]) -> dict[str, Any]:
-    logger.info("New In-Store Order received: %s", body)
-    user_info = body.get("user", {})
-    if isinstance(user_info, dict) and "phone" in user_info:
-        user_id = f"cust_{str(user_info['phone']).replace('+', '')}"
-        cust = db_get_customer(user_id)
-        if cust:
-            items = body.get("items", [])
-            order_total = sum(i.get("price", 0) * i.get("qty", 1) for i in items) if items else body.get("finalTotal", 0)
-            new_spend = round(cust.get("total_spend", 0.0) + order_total, 2)
-            cust["total_spend"] = new_spend
-            cust["vip_tier"] = calculate_vip_tier(new_spend)
-            db_save_customer(cust)
-    return {"status": "ok", "order_id": body.get("orderId", "SS-1001")}
+    logger.info("New In-Store / Portal Order received: %s", body)
+    res = process_live_order(body)
+    return {"status": "ok", "order_id": res["order_id"], "order": res["order"]}
 
-DASHBOARD_DIST_DIR = r"c:\Users\rentk\Projects\freesalewifi\frontend\shopperstop-dashboard-app\dist"
 
 @app.get("/api/orders")
 async def get_orders() -> dict[str, Any]:
-    return {"success": True, "orders": []}
+    """Return all orders from Firestore or in-memory cache."""
+    orders = list(_orders_cache)
+    if db is not None:
+        try:
+            docs = db.collection("orders").order_by("orderDate", direction=firestore.Query.DESCENDING).limit(50).stream()
+            for d in docs:
+                data = d.to_dict()
+                if not any(o.get("id") == data.get("id") for o in orders):
+                    orders.append(data)
+        except Exception as e:
+            logger.error("Firestore orders fetch error: %s", e)
+    return {"success": True, "orders": orders}
+
 
 @app.get("/api/redemptions")
 async def get_redemptions() -> dict[str, Any]:
-    """Return all coupon redemptions from Firestore (or cache)."""
-    redemptions: list[dict[str, Any]] = []
+    """Return all coupon redemptions from Firestore or in-memory cache."""
+    redemptions = list(_redemptions_cache)
+    for c in _coupons_cache:
+        for r in c.get("redemptions", []):
+            if not any(x.get("id") == r.get("id") for x in redemptions):
+                redemptions.append(r)
+
     if db is not None:
         try:
             docs = db.collection("redemptions").stream()
-            redemptions = [d.to_dict() for d in docs]
+            for d in docs:
+                data = d.to_dict()
+                if not any(r.get("id") == data.get("id") for r in redemptions):
+                    redemptions.append(data)
         except Exception as e:
             logger.error("Firestore redemptions fetch error: %s", e)
     return {"success": True, "redemptions": redemptions}
+
+
+# ---------------------------------------------------------------------------
+# MCP Endpoints (Model Context Protocol for Claude & Axionik Marketplace)
+# ---------------------------------------------------------------------------
+
+@app.post("/api/mcp/webhook")
+@app.post("/mcp/messages")
+@app.post("/mcp")
+async def handle_mcp_request(body: dict[str, Any]) -> dict[str, Any]:
+    """Handles MCP Tool Calls from Claude Connector & Axionik Marketplace (https://axionik-marketplace.vercel.app/mcp)."""
+    logger.info("MCP Protocol Request received: %s", body)
+    
+    # Handle JSON-RPC 2.0 MCP method calls
+    method = body.get("method", "")
+    params = body.get("params", {})
+    rpc_id = body.get("id", 1)
+
+    if method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": rpc_id,
+            "result": {
+                "tools": [
+                    {
+                        "name": "create_shoppers_stop_order",
+                        "description": "Places a purchase order at Shoppers Stop and updates loyalty points & dashboard.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "customerName": {"type": "string"},
+                                "customerPhone": {"type": "string"},
+                                "customerEmail": {"type": "string"},
+                                "totalAmount": {"type": "number"},
+                                "couponCode": {"type": "string"},
+                                "items": {"type": "array"}
+                            },
+                            "required": ["customerName", "customerPhone", "totalAmount"]
+                        }
+                    },
+                    {
+                        "name": "redeem_coupon",
+                        "description": "Redeems a Shoppers Stop discount coupon for a customer.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "customerPhone": {"type": "string"},
+                                "couponCode": {"type": "string"},
+                                "orderTotal": {"type": "number"}
+                            },
+                            "required": ["customerPhone", "couponCode"]
+                        }
+                    },
+                    {
+                        "name": "get_active_coupons",
+                        "description": "Fetches active Shoppers Stop promo codes and vouchers.",
+                        "inputSchema": {"type": "object", "properties": {}}
+                    }
+                ]
+            }
+        }
+
+    elif method == "tools/call":
+        tool_name = params.get("name", "")
+        arguments = params.get("arguments", {})
+
+        if tool_name == "create_shoppers_stop_order":
+            res = process_live_order(arguments)
+            return {
+                "jsonrpc": "2.0",
+                "id": rpc_id,
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"✅ Order #{res['order_id']} placed successfully! Amount: ₹{res['order']['totalAmount']}. Customer: {res['customer']['name']} ({res['customer']['vip_tier']} VIP)."
+                        }
+                    ]
+                }
+            }
+        elif tool_name == "redeem_coupon":
+            code = arguments.get("couponCode", "").upper()
+            phone = arguments.get("customerPhone", "")
+            res = process_live_order({"customerPhone": phone, "couponCode": code, "finalTotal": arguments.get("orderTotal", 1999)})
+            return {
+                "jsonrpc": "2.0",
+                "id": rpc_id,
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"🎉 Coupon '{code}' redeemed successfully for {phone}! Discount applied on Order #{res['order_id']}."
+                        }
+                    ]
+                }
+            }
+        elif tool_name == "get_active_coupons":
+            return {
+                "jsonrpc": "2.0",
+                "id": rpc_id,
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"Active Coupons: {', '.join(c['code'] for c in _coupons_cache)}"
+                        }
+                    ]
+                }
+            }
+
+    # Standard Webhook POST fallback
+    if "order" in body or "totalAmount" in body or "customerPhone" in body or "user" in body:
+        res = process_live_order(body)
+        return {"status": "success", "mcp_synced": True, "order_id": res["order_id"], "customer": res["customer"]}
+
+    return {
+        "jsonrpc": "2.0",
+        "id": rpc_id,
+        "result": {
+            "status": "Shoppers Stop MCP Connector Active",
+            "marketplace_url": "https://axionik-marketplace.vercel.app/mcp"
+        }
+    }
+
+
+
 
 @app.get("/", response_class=HTMLResponse)
 @app.get("/dashboard-ui", response_class=HTMLResponse)
