@@ -165,6 +165,8 @@ def main():
         for port in search_order:
             try:
                 ser = serial.Serial(port, 115200, timeout=1)
+                ser.dtr = False
+                ser.rts = False
                 print(f"\n[SUCCESS] Connected to ESP32 on {port} at 115200 baud!")
                 break
             except PermissionError:

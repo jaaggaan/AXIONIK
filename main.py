@@ -1,6 +1,5 @@
 # FILE: main.py
-# CLEANED: 2026-07-21
-# DESCRIPTION: AXIONIK FastAPI backend — customer registration, orders, dashboard
+# DESCRIPTION: AXIONIK FastAPI backend & Shoppers Stop Dashboard — Firebase Firestore Sync
 
 from __future__ import annotations
 
@@ -12,7 +11,8 @@ from typing import Any
 import firebase_admin
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from firebase_admin import credentials, firestore
 from pydantic import BaseModel, EmailStr, Field
 
@@ -21,58 +21,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants
-DEFAULT_PORT = 8000
+DEFAULT_PORT = 63265
 FIREBASE_KEY_PATH = "firebase-key.json"
-STORE_TECHHUB = "store_001"
-STORE_URBAN = "store_002"
-STORE_FRESHBITE = "store_003"
+STORE_SHOPPERS_STOP = "store_shoppers_stop"
 
 STORES: dict[str, dict[str, Any]] = {
-    STORE_TECHHUB: {
-        "store_id": STORE_TECHHUB,
-        "name": "TechHub Electronics",
-        "products": [
-            "Wireless Earbuds Pro",
-            "Smart Watch Series X",
-            "USB-C Hub 7-in-1",
-            "Portable Charger 20K",
-            "Gaming Headset RGB",
-        ],
+    STORE_SHOPPERS_STOP: {
+        "store_id": STORE_SHOPPERS_STOP,
+        "name": "SHOPPERS STOP Flagship",
         "offers": [
-            "TODAY ONLY: 10% OFF Your Purchase!",
-            "EXCLUSIVE: Free USB-C Cable with any order!"
+            "TODAY ONLY: 20% OFF Welcome Voucher!",
+            "EXCLUSIVE: Free Gift Voucher on purchases over ₹4,999!"
         ],
-    },
-    STORE_URBAN: {
-        "store_id": STORE_URBAN,
-        "name": "Urban Style Fashion",
-        "products": [
-            "Summer Linen Dress",
-            "Leather Crossbody Bag",
-            "Running Sneakers",
-            "Silk Scarf Collection",
-            "Denim Jacket",
-        ],
-        "offers": [
-            "TODAY ONLY: 20% OFF Summer Dresses!",
-            "EXCLUSIVE: Free Leather Tote Bag on orders over $150!"
-        ],
-    },
-    STORE_FRESHBITE: {
-        "store_id": STORE_FRESHBITE,
-        "name": "FreshBite Gourmet",
-        "products": [
-            "Artisan Sourdough Loaf",
-            "Cold-Pressed Juice Flight",
-            "Truffle Pasta Kit",
-            "Organic Coffee Beans",
-            "Seasonal Fruit Box",
-        ],
-        "offers": [
-            "TODAY ONLY: Free Fresh Pastry with any Coffee!",
-            "EXCLUSIVE: Buy One, Get One Free Artisan Sourdough!"
-        ],
-    },
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -86,25 +47,191 @@ firebase_ready = False
 _customers_cache: dict[str, dict[str, Any]] = {}
 _visits_cache: list[dict[str, Any]] = []
 _purchases_cache: dict[str, dict[str, Any]] = {}
+_feedbacks_cache: list[dict[str, Any]] = [
+    {
+        "id": "REV-1001",
+        "customerName": "Ananya Deshmukh",
+        "customerEmail": "ananya.d@gmail.com",
+        "customerPhone": "+91 98201 44321",
+        "loyaltyTier": "Black",
+        "storeLocation": "Mumbai - Malad West Flagship",
+        "category": "Ethnic & Womenswear",
+        "rating": 5,
+        "title": "Exceptional Bridal Saree Consultation & Personal Styling",
+        "comment": "The personal shopper service in the Ethnic Wear department was world-class. Staff gave expert fitting guidance and escorted us to the VIP Lounge. Seamless billing!",
+        "date": "2026-08-02",
+        "time": "16:45 PM",
+        "sentiment": "Delighted",
+        "verifiedPurchase": True,
+        "helpfulCount": 24,
+        "managerResponse": "Thank you Ananya! We are thrilled to hear about your bridal styling experience at Malad Flagship."
+    }
+]
 
-# REMOVED: Unused Firestore collections and direct access logic
+_coupons_cache: list[dict[str, Any]] = [
+    {
+        "id": "CPN-102",
+        "code": "FIRSTCITIZEN15",
+        "title": "First Citizen Bonus",
+        "description": "Exclusive 15% bonus discount for Black & Platinum tier members",
+        "discountType": "Percentage",
+        "discountValue": 15,
+        "minOrderValue": 2999,
+        "usageCount": 3840,
+        "maxUsage": 10000,
+        "status": "Active",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "applicableCategory": "Site-wide",
+        "redemptions": [
+            {
+                "id": "RED-101",
+                "couponId": "CPN-102",
+                "couponCode": "FIRSTCITIZEN15",
+                "customerName": "Vikramaditya Roy",
+                "customerEmail": "v.roy@consultant.com",
+                "customerPhone": "+91 98112 09844",
+                "loyaltyTier": "Platinum",
+                "orderId": "SS-ORD-98420",
+                "orderTotal": 8450,
+                "discountSaved": 1267,
+                "redeemedAt": "2026-07-27 11:15 AM",
+                "storeLocation": "Delhi - Select CITYWALK Saket"
+            },
+            {
+                "id": "RED-102",
+                "couponId": "CPN-102",
+                "couponCode": "FIRSTCITIZEN15",
+                "customerName": "Tanvi Agarwal",
+                "customerEmail": "tanvi.agarwal@corp.in",
+                "customerPhone": "+91 98210 99887",
+                "loyaltyTier": "Platinum",
+                "orderId": "SS-ORD-98415",
+                "orderTotal": 9998,
+                "discountSaved": 1500,
+                "redeemedAt": "2026-07-26 03:10 PM",
+                "storeLocation": "Mumbai - Malad West Flagship"
+            },
+            {
+                "id": "RED-103",
+                "couponId": "CPN-102",
+                "couponCode": "FIRSTCITIZEN15",
+                "customerName": "Ananya Deshmukh",
+                "customerEmail": "ananya.d@gmail.com",
+                "customerPhone": "+91 98201 44512",
+                "loyaltyTier": "Black",
+                "orderId": "SS-ORD-98410",
+                "orderTotal": 31500,
+                "discountSaved": 4725,
+                "redeemedAt": "2026-07-25 07:20 PM",
+                "storeLocation": "Mumbai - Malad West Flagship"
+            },
+            {
+                "id": "RED-104",
+                "couponId": "CPN-102",
+                "couponCode": "FIRSTCITIZEN15",
+                "customerName": "Kavita Reddy",
+                "customerEmail": "kavita.reddy@gmail.com",
+                "customerPhone": "+91 97011 22900",
+                "loyaltyTier": "Black",
+                "orderId": "SS-ORD-98405",
+                "orderTotal": 11486,
+                "discountSaved": 1723,
+                "redeemedAt": "2026-07-24 01:45 PM",
+                "storeLocation": "Hyderabad - Inorbit Mall Hitec City"
+            }
+        ]
+    },
+    {
+        "id": "CPN-101",
+        "code": "FESTIVE20",
+        "title": "Welcome Discount",
+        "description": "Flat 20% off on all Ethnic & Designer Collections for First Citizen Members",
+        "discountType": "Percentage",
+        "discountValue": 20,
+        "minOrderValue": 4999,
+        "usageCount": 1420,
+        "maxUsage": 5000,
+        "status": "Active",
+        "startDate": "2026-07-01",
+        "endDate": "2026-08-15",
+        "applicableCategory": "Ethnic & Womenswear",
+        "redemptions": [
+            {
+                "id": "RED-201",
+                "couponId": "CPN-101",
+                "couponCode": "FESTIVE20",
+                "customerName": "Ananya Deshmukh",
+                "customerEmail": "ananya.d@gmail.com",
+                "customerPhone": "+91 98201 44512",
+                "loyaltyTier": "Black",
+                "orderId": "SS-ORD-98421",
+                "orderTotal": 12999,
+                "discountSaved": 2599,
+                "redeemedAt": "2026-07-27 11:42 AM",
+                "storeLocation": "Mumbai - Malad West Flagship"
+            }
+        ]
+    },
+    {
+        "id": "CPN-103",
+        "code": "FESTIVE500",
+        "title": "Festive Special",
+        "description": "Flat ₹500 Off on orders above ₹4,999",
+        "discountType": "Flat",
+        "discountValue": 500,
+        "minOrderValue": 4999,
+        "usageCount": 850,
+        "maxUsage": 2000,
+        "status": "Active",
+        "startDate": "2026-07-01",
+        "endDate": "2026-12-31",
+        "applicableCategory": "All Categories",
+        "redemptions": []
+    }
+]
 
-def init_firebase() -> None:
-    """Initializes the Firebase Admin SDK client."""
+def init_firebase(force_reload: bool = False) -> None:
+    """Initializes the Firebase Admin SDK client with multi-path lookup."""
     global db, firebase_ready
     try:
-        if firebase_admin._apps:
+        if firebase_admin._apps and not force_reload:
             db = firestore.client()
             firebase_ready = True
             return
-            
-        cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH", FIREBASE_KEY_PATH)
-        if os.path.isfile(cred_path):
+
+        candidate_paths = [
+            os.environ.get("FIREBASE_CREDENTIALS_PATH", ""),
+            "firebase-key.json",
+            "firebasekey.json",
+            "firebase_key.json",
+            "backend/firebase-key.json",
+            "backend/firebasekey.json"
+        ]
+        # Also check any json file in directory containing 'firebase' or 'service_account'
+        import glob
+        for f in glob.glob("*.json") + glob.glob("backend/*.json"):
+            if "firebase" in f.lower() or "adminsdk" in f.lower():
+                candidate_paths.append(f)
+
+        cred_path = None
+        for p in candidate_paths:
+            if p and os.path.isfile(p):
+                cred_path = p
+                break
+
+        if cred_path:
+            # Check if file contains template placeholders
+            with open(cred_path, "r", encoding="utf-8") as f_cred:
+                raw_cred = f_cred.read()
+            if "YOUR_PRIVATE_KEY_HERE" in raw_cred or "YOUR_FIREBASE_PROJECT_ID" in raw_cred:
+                logger.warning("Notice: %s contains template placeholders. Waiting for user to paste real key from Firebase Console.", cred_path)
+                return
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
             db = firestore.client()
             firebase_ready = True
-            logger.info("Firebase Admin SDK & Firestore client initialized successfully")
+            logger.info("Firebase Admin SDK & Firestore client initialized successfully from %s", cred_path)
         else:
             logger.warning("Firebase key file missing — running with local memory database fallback")
     except Exception as exc:
@@ -112,159 +239,142 @@ def init_firebase() -> None:
 
 init_firebase()
 
+def ensure_firebase_ready():
+    global firebase_ready
+    if not firebase_ready:
+        init_firebase(force_reload=True)
+    return firebase_ready
+
+
 def seed_demo_data() -> None:
-    """Seeds demo database records into local cache."""
+    """Seeds demo database records into local cache and Firestore."""
     now_str = datetime.now(timezone.utc).isoformat()
     c1 = {
-        "user_id": "cust_001",
-        "name": "Sarah Chen",
+        "user_id": "cust_9876543210",
+        "name": "Priya Sharma",
         "phone": "+919876543210",
-        "email": "sarah.chen@email.com",
-        "vip_tier": "Platinum",
-        "total_spend": 1250.0,
+        "email": "priya.sharma@email.com",
+        "vip_tier": "Gold",
+        "total_spend": 14999.0,
         "created_at": now_str,
         "last_visit": now_str
     }
     c2 = {
-        "user_id": "cust_002",
-        "name": "Marcus Johnson",
+        "user_id": "cust_9123456789",
+        "name": "Rahul Verma",
         "phone": "+919123456789",
-        "email": "marcus.j@email.com",
-        "vip_tier": "Gold",
-        "total_spend": 520.0,
+        "email": "rahul.v@email.com",
+        "vip_tier": "Platinum",
+        "total_spend": 28400.0,
         "created_at": now_str,
         "last_visit": now_str
     }
     _customers_cache[c1["user_id"]] = c1
     _customers_cache[c2["user_id"]] = c2
-    
+
     v1 = {
-        "user_id": "cust_001",
-        "customer_name": "Sarah Chen",
+        "user_id": "cust_9876543210",
+        "customer_name": "Priya Sharma",
         "customer_phone": "+919876543210",
-        "store_id": STORE_TECHHUB,
-        "store_name": "TechHub Electronics",
-        "platform": "ios",
-        "timestamp": now_str,
-        "push_status": "connected"
-    }
-    v2 = {
-        "user_id": "cust_002",
-        "customer_name": "Marcus Johnson",
-        "customer_phone": "+919123456789",
-        "store_id": STORE_URBAN,
-        "store_name": "Urban Style Fashion",
-        "platform": "android",
+        "store_id": STORE_SHOPPERS_STOP,
+        "store_name": "SHOPPERS STOP Flagship",
+        "platform": "ESP32_WiFi",
         "timestamp": now_str,
         "push_status": "connected"
     }
     _visits_cache.append(v1)
-    _visits_cache.append(v2)
 
-# Seed initial data
 seed_demo_data()
 
-def serialize_doc(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Serializes document datetimes to ISO string format."""
-    if data is None:
-        return None
-    for key, value in list(data.items()):
-        if isinstance(value, datetime):
-            data[key] = value.isoformat().replace("+00:00", "Z")
-    return data
-
 def db_save_customer(customer_data: dict[str, Any]) -> dict[str, Any]:
-    """Persists customer data to active store database."""
+    """Persists customer profile to Firestore and memory cache."""
     user_id = customer_data["user_id"]
     if db is not None:
-        db.collection("customers").document(user_id).set(customer_data)
+        try:
+            db.collection("customers").document(user_id).set(customer_data)
+        except Exception as e:
+            logger.error("Firestore customer save error: %s", e)
     _customers_cache[user_id] = customer_data
     return customer_data
 
 def db_get_customer(user_id: str) -> dict[str, Any] | None:
-    """Retrieves customer profile by user ID."""
+    """Retrieves customer profile by ID."""
     if user_id in _customers_cache:
         return _customers_cache[user_id]
     if db is not None:
-        doc = db.collection("customers").document(user_id).get()
-        if doc.exists:
-            data = doc.to_dict() or {}
-            _customers_cache[user_id] = data
-            return data
+        try:
+            doc = db.collection("customers").document(user_id).get()
+            if doc.exists:
+                data = doc.to_dict() or {}
+                _customers_cache[user_id] = data
+                return data
+        except Exception as e:
+            logger.error("Firestore customer fetch error: %s", e)
     return None
 
 def db_list_customers() -> list[dict[str, Any]]:
-    """Lists all customer profile directories."""
+    """Returns list of registered customer profiles."""
     if db is not None:
-        docs = db.collection("customers").get()
-        for doc in docs:
-            _customers_cache[doc.id] = doc.to_dict() or {}
+        try:
+            docs = db.collection("customers").get()
+            res = []
+            for doc in docs:
+                data = doc.to_dict() or {}
+                res.append(data)
+            if res:
+                return res
+        except Exception as e:
+            logger.error("Firestore customer list error: %s", e)
     return list(_customers_cache.values())
 
-def db_save_visit(visit_data: dict[str, Any]) -> dict[str, Any]:
-    """Saves a client check-in visit to database."""
+def db_save_visit(visit_data: dict[str, Any]) -> None:
+    """Persists visit check-in record."""
     if db is not None:
-        db.collection("visits").add(visit_data)
-    _visits_cache.append(visit_data)
-    return visit_data
+        try:
+            db.collection("visits").add(visit_data)
+        except Exception as e:
+            logger.error("Firestore visit save error: %s", e)
+    _visits_cache.insert(0, visit_data)
 
 def db_list_visits() -> list[dict[str, Any]]:
-    """Lists recent check-in activities."""
+    """Returns visit check-in feed."""
     if db is not None:
-        docs = db.collection("visits").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(100).get()
-        visits_list = []
-        for doc in docs:
-            visits_list.append(serialize_doc(doc.to_dict() or {}))
-        return visits_list
-    return sorted(_visits_cache, key=lambda x: x.get("timestamp", ""), reverse=True)
-
-def db_save_purchase(purchase_data: dict[str, Any]) -> dict[str, Any]:
-    """Persists order purchase document."""
-    purchase_id = purchase_data["id"]
-    if db is not None:
-        db.collection("purchases").document(purchase_id).set(purchase_data)
-    _purchases_cache[purchase_id] = purchase_data
-    return purchase_data
-
-def db_get_purchase(purchase_id: str) -> dict[str, Any] | None:
-    """Retrieves order details by purchase ID."""
-    if purchase_id in _purchases_cache:
-        return _purchases_cache[purchase_id]
-    if db is not None:
-        doc = db.collection("purchases").document(purchase_id).get()
-        if doc.exists:
-            data = doc.to_dict() or {}
-            _purchases_cache[purchase_id] = data
-            return data
-    return None
-
-# Helper functions
-def get_store(store_id: str) -> dict[str, Any]:
-    """Retrieves store metadata by store ID."""
-    store = STORES.get(store_id)
-    if not store:
-        raise HTTPException(status_code=404, detail="Store not found")
-    return store
+        try:
+            docs = db.collection("visits").limit(20).get()
+            res = [d.to_dict() for d in docs if d.exists]
+            if res:
+                return res
+        except Exception as e:
+            logger.error("Firestore visits list error: %s", e)
+    return _visits_cache
 
 def calculate_vip_tier(spend: float) -> str:
-    """Calculates customer tier based on total spend value."""
-    if spend >= 1000.0:
+    """Calculates customer VIP status based on spend."""
+    if spend >= 20000.0:
         return "Platinum"
-    if spend >= 500.0:
+    if spend >= 10000.0:
         return "Gold"
-    if spend >= 200.0:
+    if spend >= 3000.0:
         return "Silver"
     return "Bronze"
 
 # ---------------------------------------------------------------------------
-# FastAPI Initialization & Schema Models
+# FastAPI Initialization & Endpoints
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="AXIONIK API",
-    description="AXIONIK client node backend services",
-    version="3.0.0"
+    title="AXIONIK — SHOPPERS STOP Portal Backend",
+    description="Captive Portal, Real-Time Dashboard & Firebase Firestore Engine",
+    version="3.5.0"
 )
+
+# Serve dashboard React assets
+try:
+    app.mount("/assets", StaticFiles(directory=r"c:\Users\rentk\Projects\freesalewifi\frontend\shopperstop-dashboard-app\dist\assets"), name="dash_assets")
+except Exception as _e:
+    print(f"Warning: Could not mount dashboard assets: {_e}")
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -274,515 +384,405 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-class RegisterCustomerRequest(BaseModel):
-    name: str = Field(..., min_length=1)
-    phone: str = Field(..., min_length=5)
-    email: EmailStr | None = None
-    store_id: str = Field(..., min_length=1)
-    consent: bool = True
+class SigninPayload(BaseModel):
+    name: str
+    phone: str
+    email: str | None = ""
 
-class OrderRequest(BaseModel):
-    user_id: str = Field(..., min_length=1)
-    store_id: str = Field(..., min_length=1)
-    product: str = Field(..., min_length=1)
-    amount: float = Field(..., gt=0)
-    category: str = Field(..., min_length=1)
-
-# ---------------------------------------------------------------------------
-# REST Endpoints
-# ---------------------------------------------------------------------------
+class CouponPayload(BaseModel):
+    code: str
+    title: str | None = "Special Offer"
+    discountType: str | None = "percentage"
+    discountValue: float = 10.0
+    minOrderValue: float = 1000.0
+    description: str | None = ""
+    endDate: str | None = "31 Dec 2026"
 
 @app.get("/health")
 async def health_check() -> dict[str, Any]:
-    """Returns backend service health status."""
     return {
-        "status": "ok",
+        "status": "online",
         "firebase_ready": firebase_ready,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
-@app.post("/register-customer")
-async def register_customer(body: RegisterCustomerRequest) -> dict[str, Any]:
-    """Registers customer connection and stores visit logs."""
-    try:
-        now_str = datetime.now(timezone.utc).isoformat()
-        user_id = f"user_{body.phone.replace('+', '')}"
-        
-        existing = db_get_customer(user_id)
-        if existing:
-            customer_data = {
-                **existing,
-                "name": body.name,
-                "email": body.email or existing.get("email", ""),
-                "last_visit": now_str,
-                "consent": body.consent
-            }
-        else:
-            customer_data = {
-                "user_id": user_id,
-                "name": body.name,
-                "phone": body.phone,
-                "email": body.email or "",
-                "vip_tier": "Bronze",
-                "total_spend": 0.0,
-                "created_at": now_str,
-                "last_visit": now_str,
-                "consent": body.consent
-            }
-            
-        db_save_customer(customer_data)
-        
-        store = get_store(body.store_id)
-        visit_data = {
-            "user_id": user_id,
-            "customer_name": body.name,
-            "customer_phone": body.phone,
-            "store_id": body.store_id,
-            "store_name": store["name"],
-            "platform": "web",
-            "timestamp": now_str,
-            "push_status": "connected"
-        }
-        db_save_visit(visit_data)
-        
-        return {
-            "status": "success",
-            "user_id": user_id,
-            "customer": customer_data
-        }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.error("register_customer failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Registration failed") from exc
-
 @app.get("/api/customers")
-async def get_customers() -> list[dict[str, Any]]:
-    """Returns registered client profiles list."""
-    try:
-        return db_list_customers()
-    except Exception as exc:
-        logger.error("get_customers failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Failed to retrieve customers") from exc
+async def get_customers() -> dict[str, Any]:
+    return {"success": True, "customers": db_list_customers()}
 
 @app.get("/api/activity")
 async def get_activity() -> list[dict[str, Any]]:
-    """Returns client check-in visits timeline list."""
-    try:
-        return db_list_visits()
-    except Exception as exc:
-        logger.error("get_activity failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Failed to retrieve activities") from exc
+    return db_list_visits()
 
-@app.get("/api/menu/{store_id}")
-async def get_menu(store_id: str) -> dict[str, Any]:
-    """Returns store menus and promotion details."""
-    store = get_store(store_id)
-    return {
-        "store_id": store_id,
-        "name": store["name"],
-        "products": store["products"],
-        "offers": store["offers"]
-    }
+@app.post("/api/signin")
+async def api_signin(body: SigninPayload) -> dict[str, Any]:
+    now_str = datetime.now(timezone.utc).isoformat()
+    user_id = f"cust_{body.phone.replace('+', '')}"
 
-@app.post("/api/order")
-async def place_order(body: OrderRequest) -> dict[str, Any]:
-    """Processes visitor order transactions and updates VIP spend tags."""
-    try:
-        store = get_store(body.store_id)
-        customer = db_get_customer(body.user_id)
-        if not customer:
-            raise HTTPException(status_code=404, detail="Customer profile not found")
-            
-        now_str = datetime.now(timezone.utc).isoformat()
-        order_id = f"ord_{int(datetime.now(timezone.utc).timestamp())}"
-        
-        purchase_data = {
-            "id": order_id,
-            "user_id": body.user_id,
-            "store_id": body.store_id,
-            "store_name": store["name"],
-            "product": body.product,
-            "amount": round(body.amount, 2),
-            "category": body.category,
-            "timestamp": now_str
-        }
-        db_save_purchase(purchase_data)
-        
-        new_spend = round(customer.get("total_spend", 0.0) + body.amount, 2)
-        new_tier = calculate_vip_tier(new_spend)
-        
-        updated_customer = {
-            **customer,
-            "total_spend": new_spend,
-            "vip_tier": new_tier,
+    existing = db_get_customer(user_id)
+    if existing:
+        cust = {
+            **existing,
+            "name": body.name,
+            "email": body.email or existing.get("email", ""),
             "last_visit": now_str
         }
-        db_save_customer(updated_customer)
-        
-        return {
-            "status": "success",
-            "order_id": order_id,
-            "purchase": purchase_data,
-            "new_spend": new_spend,
-            "vip_tier": new_tier
+    else:
+        cust = {
+            "user_id": user_id,
+            "name": body.name,
+            "phone": body.phone,
+            "email": body.email or "",
+            "vip_tier": "Gold",
+            "total_spend": 0.0,
+            "created_at": now_str,
+            "last_visit": now_str
         }
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.error("place_order failed: %s", exc)
-        raise HTTPException(status_code=500, detail="Failed to place order") from exc
 
-@app.get("/api/order/{order_id}")
-async def get_order(order_id: str) -> dict[str, Any]:
-    """Retrieves specific order transaction details."""
-    purchase = db_get_purchase(order_id)
-    if not purchase:
-        raise HTTPException(status_code=404, detail="Order record not found")
-    return purchase
+    db_save_customer(cust)
 
-@app.get("/dashboard-ui")
-async def dashboard_ui() -> HTMLResponse:
-    """Renders the premium AXIONIK client management dashboard."""
-    return HTMLResponse(_render_dashboard_ui())
+    print("\n==================================================================", flush=True)
+    print(f"★ REAL-TIME ESP32 WI-FI SIGN-IN RECEIVED VIA PORTAL ★", flush=True)
+    print(f"Customer: {body.name} | Phone: {body.phone} | Email: {body.email}", flush=True)
+    print("==================================================================\n", flush=True)
 
-# REMOVED: Unused settings, profile, export and push endpoints
+    if firebase_ready and db:
+        try:
+            db.collection("customers").document(body.email or user_id).set({
+                "id": f"FC-{int(datetime.now().timestamp())%100000}",
+                "username": body.name,
+                "email": body.email or "",
+                "phone": body.phone,
+                "loyaltyTier": "Black",
+                "lastVisitAt": now_str
+            }, merge=True)
+            logger.info("Synced Wi-Fi signin for %s to Firestore!", body.name)
+        except Exception as e:
+            logger.error("Firestore Wi-Fi signin sync error: %s", e)
 
-# ---------------------------------------------------------------------------
-# Dashboard UI Template Rendering
-# ---------------------------------------------------------------------------
-
-def _render_dashboard_ui() -> str:
-    """Renders dashboard HTML template."""
-    return """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>AXIONIK — Retail Intelligence Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg-page:        #090a0f;
-  --bg-card:        rgba(18, 19, 26, 0.85);
-  --bg-card-solid:  #12131a;
-  --bg-card-hover:  #191b26;
-  --primary:        #6366f1;
-  --success:        #10b981;
-  --warning:        #f59e0b;
-  --danger:         #ef4444;
-  --text-main:      #f1f5f9;
-  --text-muted:     #8892a4;
-  --border:         #1d202d;
-  --border-hover:   #2a2f42;
-  --border-radius:  16px;
-  --shadow:         0 8px 32px rgba(0, 0, 0, 0.5);
-  --sidebar-width:  260px;
-  --transition:     all 0.25s ease;
-}
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-page);
-  color: var(--text-main);
-  min-height: 100vh;
-  display: flex;
-  overflow-x: hidden;
-}
-h1, h2, h3, h4, .logo-text { font-family: 'Sora', sans-serif; font-weight: 700; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-aside {
-  width: var(--sidebar-width);
-  height: 100vh;
-  position: fixed;
-  left: 0; top: 0;
-  background: var(--bg-card-solid);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1rem;
-  z-index: 100;
-}
-.logo-container { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem 2rem; }
-.logo-icon { font-size: 1.4rem; color: var(--primary); }
-.logo-text { font-size: 1.25rem; color: var(--text-main); }
-.nav-item {
-  display: flex; align-items: center; gap: 0.85rem; padding: 0.75rem 1rem;
-  color: var(--text-muted); text-decoration: none; border-radius: 10px;
-  font-weight: 500; cursor: pointer; transition: var(--transition);
-}
-.nav-item:hover, .nav-item.active { color: var(--text-main); background: var(--bg-card-hover); }
-.nav-item.active { background: rgba(99, 102, 241, 0.15); color: var(--primary); box-shadow: inset 3px 0 0 0 var(--primary); }
-.app-wrapper { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-header {
-  height: 68px; border-bottom: 1px solid var(--border);
-  background: rgba(18, 19, 26, 0.5); backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: space-between; padding: 0 2rem;
-}
-.search-wrapper { position: relative; width: 100%; max-width: 320px; }
-.search-wrapper i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-.search-input {
-  width: 100%; background: var(--bg-card-solid); border: 1px solid var(--border);
-  color: var(--text-main); padding: 0.55rem 1rem 0.55rem 2.5rem; border-radius: 10px;
-  outline: none; font-size: 0.9rem; transition: var(--transition);
-}
-.search-input:focus { border-color: var(--primary); }
-.header-right { display: flex; align-items: center; gap: 1rem; }
-.live-pill {
-  display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.8rem;
-  border-radius: 999px; background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.78rem; font-weight: 600; color: var(--success);
-}
-.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
-main { flex: 1; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
-.stat-card {
-  background: var(--bg-card-solid); border: 1px solid var(--border);
-  border-radius: var(--border-radius); padding: 1.5rem;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.stat-left { display: flex; flex-direction: column; gap: 0.35rem; }
-.stat-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-.stat-val { font-size: 1.75rem; font-weight: 700; }
-.stat-icon-wrapper {
-  width: 46px; height: 46px; border-radius: 12px;
-  background: rgba(99, 102, 241, 0.15); color: var(--primary);
-  display: grid; place-items: center; font-size: 1.25rem;
-}
-.bento-split { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
-.glass-card { background: var(--bg-card-solid); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 1.5rem; }
-.table-wrapper { border-radius: var(--border-radius); border: 1px solid var(--border); overflow: hidden; background: var(--bg-card-solid); }
-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-th { color: var(--text-muted); font-weight: 600; padding: 1rem 1.25rem; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border); }
-td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); color: var(--text-main); }
-tbody tr { cursor: pointer; transition: var(--transition); }
-tbody tr:hover { background: var(--bg-card-hover); }
-.badge { padding: 0.25rem 0.6rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
-.vip-Platinum { background: rgba(168, 85, 247, 0.12); color: #c084fc; }
-.vip-Gold { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-.vip-Silver { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; }
-.vip-Bronze { background: rgba(180, 83, 9, 0.12); color: #fb923c; }
-.timeline { position: relative; padding-left: 20px; }
-.timeline::before { content: ''; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px; background: var(--border); }
-.feed-item { position: relative; margin-bottom: 1.25rem; }
-.feed-marker {
-  position: absolute; left: -20px; width: 10px; height: 10px;
-  border-radius: 50%; background: var(--primary); border: 2px solid var(--bg-page);
-}
-.feed-details { display: flex; flex-direction: column; gap: 2px; }
-.feed-time { font-size: 0.68rem; color: var(--text-muted); }
-.feed-desc { font-size: 0.8rem; line-height: 1.4; }
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
-  z-index: 1000; display: none; align-items: center; justify-content: center;
-}
-.modal-card {
-  background: var(--bg-card-solid); border: 1px solid var(--border);
-  border-radius: var(--border-radius); width: 100%; max-width: 480px;
-  padding: 2rem; position: relative; display: flex; flex-direction: column; gap: 1.25rem;
-}
-.modal-close-btn { position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; }
-.modal-close-btn:hover { color: var(--text-main); }
-.modal-title { font-size: 1.25rem; margin-bottom: 0.5rem; }
-.modal-info-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.5rem 0; font-size: 0.88rem; }
-.modal-info-label { color: var(--text-muted); }
-.modal-info-val { font-weight: 600; }
-</style>
-</head>
-<body>
-<aside>
-  <div class="logo-container">
-    <i class="fa-solid fa-cube logo-icon"></i>
-    <span class="logo-text">AXIONIK</span>
-  </div>
-  <nav>
-    <div class="nav-item active"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></div>
-  </nav>
-</aside>
-<div class="app-wrapper">
-  <header>
-    <div class="header-left">
-      <div class="search-wrapper">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" class="search-input" id="search-input" placeholder="Search customers..." oninput="handleSearch(this.value)">
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="live-pill"><div class="live-dot"></div>Live</div>
-    </div>
-  </header>
-  <main>
-    <section class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-left"><span class="stat-label">Total Customers</span><span class="stat-val" id="val-total">0</span></div>
-        <div class="stat-icon-wrapper"><i class="fa-solid fa-users"></i></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-left"><span class="stat-label">Active Now</span><span class="stat-val" id="val-active">0</span></div>
-        <div class="stat-icon-wrapper"><i class="fa-solid fa-wifi"></i></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-left"><span class="stat-label">Conversion Rate</span><span class="stat-val" id="val-conversion">0%</span></div>
-        <div class="stat-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-left"><span class="stat-label">Revenue Today</span><span class="stat-val" id="val-revenue">$0.00</span></div>
-        <div class="stat-icon-wrapper"><i class="fa-solid fa-sack-dollar"></i></div>
-      </div>
-    </section>
-    <section class="bento-split">
-      <div class="glass-card">
-        <h3 style="margin-bottom: 1rem;">Recent Customers</h3>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr><th>Customer</th><th>Phone</th><th>VIP Tier</th><th>Spend</th><th>Last Visit</th></tr>
-            </thead>
-            <tbody id="customers-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="glass-card">
-        <h3 style="margin-bottom: 1rem;">Live Activity Feed</h3>
-        <div class="timeline" id="activity-feed"></div>
-      </div>
-    </section>
-  </main>
-</div>
-<div class="modal-overlay" id="customer-modal" onclick="closeCustomerModal(event)">
-  <div class="modal-card" onclick="event.stopPropagation()">
-    <button class="modal-close-btn" onclick="document.getElementById('customer-modal').style.display = 'none'">&times;</button>
-    <h3 class="modal-title">Customer Dossier</h3>
-    <div id="modal-content"></div>
-  </div>
-</div>
-<script>
-let customersData = [];
-let activityData = [];
-let filterQuery = '';
-
-async function fetchTelemetry() {
-  try {
-    const custRes = await fetch('/api/customers');
-    const actRes = await fetch('/api/activity');
-    if (custRes.ok && actRes.ok) {
-      customersData = await custRes.json();
-      activityData = await actRes.json();
-      updateDashboard();
+    visit = {
+        "user_id": user_id,
+        "customer_name": body.name,
+        "customer_phone": body.phone,
+        "store_id": STORE_SHOPPERS_STOP,
+        "store_name": "SHOPPERS STOP Flagship",
+        "platform": "ESP32_WiFi",
+        "timestamp": now_str,
+        "push_status": "connected"
     }
-  } catch (err) {
-    // Ignore error
-  }
-}
+    db_save_visit(visit)
 
-function updateDashboard() {
-  document.getElementById('val-total').innerText = customersData.length;
-  
-  const activeCount = activityData.filter(a => {
-    const minDiff = (new Date() - new Date(a.timestamp)) / 60000;
-    return minDiff <= 30;
-  }).length;
-  document.getElementById('val-active').innerText = activeCount;
-  
-  const connectedCount = activityData.filter(a => a.push_status === 'connected').length;
-  const rate = activityData.length > 0 ? ((connectedCount / activityData.length) * 100).toFixed(1) + '%' : '0%';
-  document.getElementById('val-conversion').innerText = rate;
-  
-  const totalSpend = customersData.reduce((acc, curr) => acc + (curr.total_spend || 0.0), 0.0);
-  document.getElementById('val-revenue').innerText = '$' + totalSpend.toFixed(2);
-  
-  renderCustomersTable();
-  renderActivityFeed();
-}
+    return {"status": "success", "customer": cust}
 
-function renderCustomersTable() {
-  const tbody = document.getElementById('customers-table-body');
-  tbody.innerHTML = '';
-  
-  const filtered = customersData.filter(c => 
-    c.name.toLowerCase().includes(filterQuery.toLowerCase()) || 
-    c.phone.includes(filterQuery)
-  );
-  
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No matching records</td></tr>';
-    return;
-  }
-  
-  filtered.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.onclick = () => openCustomerModal(c);
-    tr.innerHTML = `
-      <td><strong>${c.name}</strong><br><span style="font-size:0.75rem;color:var(--text-muted)">${c.email || ''}</span></td>
-      <td>${c.phone}</td>
-      <td><span class="badge vip-${c.vip_tier}">${c.vip_tier}</span></td>
-      <td>$${(c.total_spend || 0.0).toFixed(2)}</td>
-      <td style="font-size:0.8rem;color:var(--text-muted)">${c.last_visit.replace('T',' ').slice(0,16)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+@app.get("/api/coupons")
+async def get_coupons() -> dict[str, Any]:
+    return {"success": True, "coupons": _coupons_cache}
 
-function renderActivityFeed() {
-  const feed = document.getElementById('activity-feed');
-  feed.innerHTML = '';
-  
-  if (activityData.length === 0) {
-    feed.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;">No activity log</div>';
-    return;
-  }
-  
-  activityData.slice(0, 10).forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'feed-item';
-    div.innerHTML = `
-      <div class="feed-marker"></div>
-      <div class="feed-details">
-        <span class="feed-time">${a.timestamp.replace('T',' ').slice(11,16)}</span>
-        <div class="feed-desc"><strong>${a.customer_name}</strong> connected at <strong>${a.store_name}</strong></div>
-      </div>
-    `;
-    feed.appendChild(div);
-  });
-}
+@app.post("/api/coupons")
+async def create_coupon(body: CouponPayload) -> dict[str, Any]:
+    c = body.dict()
+    c["code"] = c["code"].upper()
+    _coupons_cache.insert(0, c)
+    if db is not None:
+        try:
+            db.collection("coupons").document(c["code"]).set(c)
+        except Exception as e:
+            logger.error("Firestore coupon save error: %s", e)
+    return {"success": True, "coupon": c}
 
-function handleSearch(val) {
-  filterQuery = val;
-  renderCustomersTable();
-}
+@app.post("/api/order")
+async def place_order(body: dict[str, Any]) -> dict[str, Any]:
+    logger.info("New In-Store Order received: %s", body)
+    user_info = body.get("user", {})
+    if isinstance(user_info, dict) and "phone" in user_info:
+        user_id = f"cust_{str(user_info['phone']).replace('+', '')}"
+        cust = db_get_customer(user_id)
+        if cust:
+            items = body.get("items", [])
+            order_total = sum(i.get("price", 0) * i.get("qty", 1) for i in items) if items else body.get("finalTotal", 0)
+            new_spend = round(cust.get("total_spend", 0.0) + order_total, 2)
+            cust["total_spend"] = new_spend
+            cust["vip_tier"] = calculate_vip_tier(new_spend)
+            db_save_customer(cust)
+    return {"status": "ok", "order_id": body.get("orderId", "SS-1001")}
 
-function openCustomerModal(c) {
-  const modal = document.getElementById('customer-modal');
-  const content = document.getElementById('modal-content');
-  
-  content.innerHTML = `
-    <div class="modal-info-row"><span class="modal-info-label">Customer Name</span><span class="modal-info-val">${c.name}</span></div>
-    <div class="modal-info-row"><span class="modal-info-label">Phone</span><span class="modal-info-val">${c.phone}</span></div>
-    <div class="modal-info-row"><span class="modal-info-label">Email</span><span class="modal-info-val">${c.email || '—'}</span></div>
-    <div class="modal-info-row"><span class="modal-info-label">VIP Category</span><span class="modal-info-val"><span class="badge vip-${c.vip_tier}">${c.vip_tier}</span></span></div>
-    <div class="modal-info-row"><span class="modal-info-label">Lifetime Spend</span><span class="modal-info-val">$${(c.total_spend || 0.0).toFixed(2)}</span></div>
-    <div class="modal-info-row"><span class="modal-info-label">Joined On</span><span class="modal-info-val">${c.created_at.replace('T',' ').slice(0,16)}</span></div>
-    <div class="modal-info-row"><span class="modal-info-label">Last Visited</span><span class="modal-info-val">${c.last_visit.replace('T',' ').slice(0,16)}</span></div>
-  `;
-  modal.style.display = 'flex';
-}
+DASHBOARD_DIST_DIR = r"c:\Users\rentk\Projects\freesalewifi\frontend\shopperstop-dashboard-app\dist"
 
-function closeCustomerModal(e) {
-  document.getElementById('customer-modal').style.display = 'none';
-}
+@app.get("/api/orders")
+async def get_orders() -> dict[str, Any]:
+    return {"success": True, "orders": []}
 
-window.addEventListener('load', () => {
-  fetchTelemetry();
-  setInterval(fetchTelemetry, 5000);
-});
-</script>
-</body>
-</html>"""
+@app.get("/api/redemptions")
+async def get_redemptions() -> dict[str, Any]:
+    """Return all coupon redemptions from Firestore (or cache)."""
+    redemptions: list[dict[str, Any]] = []
+    if db is not None:
+        try:
+            docs = db.collection("redemptions").stream()
+            redemptions = [d.to_dict() for d in docs]
+        except Exception as e:
+            logger.error("Firestore redemptions fetch error: %s", e)
+    return {"success": True, "redemptions": redemptions}
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/dashboard-ui", response_class=HTMLResponse)
+async def dashboard_page():
+    """Renders the SHOPPERS STOP Live Dashboard UI (React App)."""
+    index_file = r"c:\Users\rentk\Projects\freesalewifi\frontend\shopperstop-dashboard-app\dist\index.html"
+    if os.path.isfile(index_file):
+        with open(index_file, "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/html")
+    return Response(content="<h1>Dashboard not found</h1>", media_type="text/html")
+
+@app.get("/api/feedbacks")
+async def get_feedbacks() -> dict[str, Any]:
+    return {"success": True, "feedbacks": _feedbacks_cache}
+
+class FeedbackPayload(BaseModel):
+    customerName: str
+    customerEmail: str
+    customerPhone: str
+    loyaltyTier: str = "Silver"
+    storeLocation: str = "Mumbai - Malad West Flagship"
+    category: str = "Wi-Fi & Digital Kiosk"
+    rating: int = 5
+    title: str
+    comment: str
+
+@app.post("/api/feedback")
+async def add_feedback(body: FeedbackPayload) -> dict[str, Any]:
+    item = {
+        "id": f"REV-{len(_feedbacks_cache) + 1001}",
+        "customerName": body.customerName,
+        "customerEmail": body.customerEmail,
+        "customerPhone": body.customerPhone,
+        "loyaltyTier": body.loyaltyTier,
+        "storeLocation": body.storeLocation,
+        "category": body.category,
+        "rating": body.rating,
+        "title": body.title,
+        "comment": body.comment,
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "time": datetime.now().strftime("%H:%M %p"),
+        "sentiment": "Delighted" if body.rating >= 4 else "Positive",
+        "verifiedPurchase": True,
+        "helpfulCount": 1,
+        "managerResponse": None
+    }
+    _feedbacks_cache.insert(0, item)
+
+    # Sync to Firestore if ready
+    if firebase_ready and db:
+        try:
+            db.collection("customer_feedbacks").document(item["id"]).set(item, merge=True)
+            logger.info("Synced new feedback to Firestore: %s", item["id"])
+        except Exception as e:
+            logger.error("Firestore feedback sync error: %s", e)
+
+    return {"status": "success", "feedback": item}
+
+def seed_firestore_live() -> None:
+    """Automatically populates initial collections into Firestore Database."""
+    if not (firebase_ready and db):
+        return
+    try:
+        # Seed Customers
+        c_ref = db.collection("customers")
+        c_ref.document("ananya.d@gmail.com").set({
+            "id": "FC-10089",
+            "username": "Ananya Deshmukh",
+            "email": "ananya.d@gmail.com",
+            "phone": "+91 98201 44321",
+            "loyaltyTier": "Black",
+            "loyaltyPoints": 18450,
+            "totalSpent": 245000,
+            "totalOrders": 14,
+            "preferredCategory": "Ethnic & Womenswear",
+            "lastVisitAt": datetime.now(timezone.utc).isoformat()
+        }, merge=True)
+        c_ref.document("rahul.verma@techcorp.io").set({
+            "id": "FC-10090",
+            "username": "Rahul Verma",
+            "email": "rahul.verma@techcorp.io",
+            "phone": "+91 97112 88401",
+            "loyaltyTier": "Platinum",
+            "loyaltyPoints": 9200,
+            "totalSpent": 98500,
+            "totalOrders": 8,
+            "preferredCategory": "Wi-Fi & Digital Kiosk",
+            "lastVisitAt": datetime.now(timezone.utc).isoformat()
+        }, merge=True)
+
+        # Seed Redemptions
+        r_ref = db.collection("coupon_redemptions")
+        r_ref.document("RED-101").set({
+            "id": "RED-101",
+            "couponCode": "FESTIVE20",
+            "customerName": "Ananya Deshmukh",
+            "customerEmail": "ananya.d@gmail.com",
+            "customerPhone": "+91 98201 44321",
+            "loyaltyTier": "Black",
+            "orderId": "SS-ORD-98421",
+            "orderTotal": 12999,
+            "discountSaved": 2599,
+            "storeLocation": "Mumbai - Malad West Flagship",
+            "redeemedAt": datetime.now().strftime("%Y-%m-%d %H:%M %p")
+        }, merge=True)
+
+        # Seed Feedbacks
+        f_ref = db.collection("customer_feedbacks")
+        f_ref.document("REV-1001").set({
+            "id": "REV-1001",
+            "customerName": "Ananya Deshmukh",
+            "customerEmail": "ananya.d@gmail.com",
+            "customerPhone": "+91 98201 44321",
+            "loyaltyTier": "Black",
+            "storeLocation": "Mumbai - Malad West Flagship",
+            "category": "Ethnic & Womenswear",
+            "rating": 5,
+            "title": "Exceptional Bridal Saree Consultation",
+            "comment": "The personal shopper service in Ethnic Wear was world-class. VIP Lounge billing was seamless!",
+            "sentiment": "Delighted",
+            "verifiedPurchase": True,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "time": datetime.now().strftime("%H:%M %p")
+        }, merge=True)
+
+        logger.info("Successfully seeded live Firestore database collections (customers, redemptions, feedbacks)!")
+    except Exception as exc:
+        logger.error("Firestore seeding failed: %s", exc)
+
+# Execute seed on startup
+seed_firestore_live()
+
+
+# ---------------------------------------------------------------------------
+# ESP32 Serial Monitor Listener Thread (PowerShell & Firebase Real-Time Sync)
+# ---------------------------------------------------------------------------
+import threading
+import json
+import time
+
+def start_serial_monitor():
+    def serial_worker():
+        try:
+            import serial
+            import serial.tools.list_ports
+        except ImportError:
+            logger.warning("pyserial package not installed. Skipping hardware serial listener.")
+            return
+
+        connected_ser = None
+        current_port = None
+
+        while True:
+            try:
+                if connected_ser is None or not connected_ser.is_open:
+                    ports = [p.device for p in serial.tools.list_ports.comports()]
+                    for port in ports:
+                        try:
+                            ser = serial.Serial(port, 115200, timeout=1)
+                            connected_ser = ser
+                            current_port = port
+                            logger.info("⚡ [ESP32 HARDWARE CONNECTED] Monitoring ESP32 Serial on %s at 115200 baud...", port)
+                            break
+                        except Exception:
+                            continue
+
+                if connected_ser and connected_ser.is_open:
+                    line = connected_ser.readline().decode("utf-8", errors="ignore").strip()
+                    if line:
+                        if "User Data:" in line or "[LOGIN LOG]" in line or "{" in line:
+                            logger.info("📡 [ESP32 SERIAL PAYLOAD] %s", line)
+                            
+                            # Parse JSON inside line if present
+                            json_start = line.find("{")
+                            json_end = line.rfind("}")
+                            if json_start != -1 and json_end > json_start:
+                                try:
+                                    payload = json.loads(line[json_start:json_end+1])
+                                    cust_name = payload.get("name") or payload.get("customerName") or "Store Shopper"
+                                    cust_email = payload.get("email") or payload.get("customerEmail") or f"shopper_{int(time.time())}@shoppersstop.com"
+                                    cust_phone = payload.get("phone") or payload.get("customerPhone") or "+91 98201 00000"
+                                    store_loc = payload.get("storeLocation") or "Mumbai - Malad West Flagship"
+                                    coupon = payload.get("coupon") or payload.get("couponCode")
+                                    feedback_txt = payload.get("feedback") or payload.get("comment")
+
+                                    print("\n==================================================================", flush=True)
+                                    print(f"★ REAL-TIME ESP32 PORTAL SIGN-IN CAPTURED VIA SERIAL MONITOR ★", flush=True)
+                                    print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email}", flush=True)
+                                    if coupon:
+                                        print(f"Coupon Redeemed: {coupon}", flush=True)
+                                    if feedback_txt:
+                                        print(f"Customer Feedback: {feedback_txt}", flush=True)
+                                    print("==================================================================\n", flush=True)
+
+                                    # Save to memory cache
+                                    cust_obj = {
+                                        "user_id": f"cust_{cust_phone.replace('+', '')}",
+                                        "name": cust_name,
+                                        "phone": cust_phone,
+                                        "email": cust_email,
+                                        "vip_tier": "Gold",
+                                        "total_spend": 0.0,
+                                        "created_at": datetime.now(timezone.utc).isoformat(),
+                                        "last_visit": datetime.now(timezone.utc).isoformat()
+                                    }
+                                    db_save_customer(cust_obj)
+
+                                    # Save to Firestore if available
+                                    if firebase_ready and db:
+                                        db.collection("customers").document(cust_email).set({
+                                            "id": f"FC-{int(time.time())%100000}",
+                                            "username": cust_name,
+                                            "email": cust_email,
+                                            "phone": cust_phone,
+                                            "loyaltyTier": "Gold",
+                                            "storeLocation": store_loc,
+                                            "lastVisitAt": datetime.now(timezone.utc).isoformat()
+                                        }, merge=True)
+
+                                        if coupon:
+                                            db.collection("coupon_redemptions").add({
+                                                "couponCode": str(coupon).upper(),
+                                                "customerName": cust_name,
+                                                "customerEmail": cust_email,
+                                                "customerPhone": cust_phone,
+                                                "storeLocation": store_loc,
+                                                "redeemedAt": datetime.now().strftime("%Y-%m-%d %H:%M %p")
+                                            })
+
+                                        if feedback_txt:
+                                            db.collection("customer_feedbacks").add({
+                                                "customerName": cust_name,
+                                                "customerEmail": cust_email,
+                                                "customerPhone": cust_phone,
+                                                "storeLocation": store_loc,
+                                                "rating": 5,
+                                                "comment": feedback_txt,
+                                                "sentiment": "Delighted",
+                                                "createdAt": datetime.now(timezone.utc).isoformat()
+                                            })
+                                        logger.info("✓ Firestore updated with live ESP32 serial data!")
+                                except Exception as parse_err:
+                                    logger.debug("Serial JSON parse info: %s", parse_err)
+
+            except Exception as e:
+                connected_ser = None
+                time.sleep(2)
+            time.sleep(0.1)
+
+    t = threading.Thread(target=serial_worker, daemon=True)
+    t.start()
+
+start_serial_monitor()
+
+
+
+# Duplicate route removed — dashboard is served by dashboard_page() above
+
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting AXIONIK FastAPI app on port 8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    logger.info("Starting SHOPPERS STOP FastAPI backend on port %d", DEFAULT_PORT)
+    uvicorn.run(app, host="0.0.0.0", port=DEFAULT_PORT)

@@ -178,9 +178,23 @@ async def health_check() -> dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+import os
+from fastapi.staticfiles import StaticFiles
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DASHBOARD_DIST_DIR = os.path.join(PROJECT_ROOT, "frontend", "shopperstop-dashboard-app", "dist")
+
+if os.path.isdir(os.path.join(DASHBOARD_DIST_DIR, "assets")):
+    app.mount("/assets", StaticFiles(directory=os.path.join(DASHBOARD_DIST_DIR, "assets")), name="static_assets")
+
+@app.get("/")
 @app.get("/dashboard-ui")
 async def dashboard_ui() -> HTMLResponse:
     """Renders the premium AXIONIK client management dashboard."""
+    index_file = os.path.join(DASHBOARD_DIST_DIR, "index.html")
+    if os.path.isfile(index_file):
+        with open(index_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
     return HTMLResponse(get_dashboard_html())
 
 
