@@ -64,15 +64,32 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
       });
     }
 
-    // 2. Post to Telemetry Sync API (Port 5000)
+    // 2. Post to Telemetry & Customer Sync API (Port 63265)
+    const custName = customer.fullName || customer.name || customer.username || 'Wi-Fi Guest';
+    const custPhone = customer.phone || '9876543210';
+    const custEmail = customer.email || `${custPhone}@ss-wifi.in`;
+
+    // Save customer + assigned_coupon in Supabase customers table
+    fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/customers' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/customers')), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: custName,
+        phone: custPhone,
+        email: custEmail,
+        coupon: coupon.code
+      })
+    }).catch(() => {});
+
+    // Save redemption in Supabase redemptions & coupons table
     fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/redemptions' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/redemptions')), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         couponCode: coupon.code,
-        customerName: customer.fullName || customer.name || customer.username || 'Wi-Fi Guest',
-        customerPhone: customer.phone || '9876543210',
-        customerEmail: customer.email || `${customer.phone || '9876543210'}@ss-wifi.in`,
+        customerName: custName,
+        customerPhone: custPhone,
+        customerEmail: custEmail,
         storeLocation: 'Mumbai - Malad West Flagship'
       })
     }).catch(() => {});

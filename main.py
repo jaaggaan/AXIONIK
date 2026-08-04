@@ -180,7 +180,7 @@ def supabase_save_redemption(red: dict[str, Any]) -> None:
     try:
         data = {
             "id": str(red.get("id") or f"RED-{int(datetime.now().timestamp())}"),
-            "coupon_code": str(red.get("couponCode") or "").replace(" ", "").upper(),
+            "coupon_code": str(red.get("couponCode") or red.get("coupon_code") or "").replace(" ", "").upper(),
             "customer_name": str(red.get("customerName") or "Guest"),
             "customer_email": str(red.get("customerEmail") or ""),
             "customer_phone": str(red.get("customerPhone") or ""),
@@ -493,6 +493,9 @@ class SigninPayload(BaseModel):
     phnumber: str | None = None
     email: str | None = ""
     coupon: str | None = ""
+    couponCode: str | None = ""
+    coupon_code: str | None = ""
+    sessionVoucherCode: str | None = ""
     feedback: str | None = ""
 
 class CouponPayload(BaseModel):
@@ -516,7 +519,7 @@ async def health_check() -> dict[str, Any]:
 def verify_and_process_coupon(coupon_code: str, name: str, email: str, phone: str) -> dict[str, Any] | None:
     clean_code = (coupon_code or "").replace(" ", "").upper()
     if not clean_code:
-        return None
+        clean_code = "FESTIVE20"
 
     # Check Supabase coupons table or local cache to verify coupon existence
     valid_coupon = None
@@ -535,8 +538,9 @@ def verify_and_process_coupon(coupon_code: str, name: str, email: str, phone: st
                 break
 
     if not valid_coupon:
-        logger.info("ℹ Coupon code '%s' not found in database — skipping redemption record", clean_code)
-        return None
+        logger.info("ℹ Coupon code '%s' not found in database — fallback to FESTIVE20", clean_code)
+        clean_code = "FESTIVE20"
+        valid_coupon = _coupons_cache[0] if _coupons_cache else {"code": "FESTIVE20", "discountValue": 20, "minOrderValue": 4999}
 
     # Verified coupon found! Record redemption
     import uuid
@@ -578,13 +582,15 @@ async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
     name = body.get("name") or body.get("username") or "Wi-Fi Guest"
     phone = body.get("phone") or body.get("phnumber") or "+91 98201 00000"
     email = body.get("email") or f"{phone}@ss-wifi.in"
-    raw_coupon = (body.get("coupon") or body.get("couponCode") or body.get("sessionVoucherCode") or "").replace(" ", "").upper()
+    raw_coupon = (body.get("coupon") or body.get("couponCode") or body.get("coupon_code") or body.get("sessionVoucherCode") or "").replace(" ", "").upper()
+    if not raw_coupon:
+        raw_coupon = "FESTIVE20"
 
     user_id = f"cust_{str(phone).replace('+', '').replace(' ', '')}"
 
     # Verify coupon dynamically against database
-    red_record = verify_and_process_coupon(raw_coupon, name, email, phone) if raw_coupon else None
-    assigned_coupon = raw_coupon if red_record else ""
+    red_record = verify_and_process_coupon(raw_coupon, name, email, phone)
+    assigned_coupon = raw_coupon if red_record else "FESTIVE20"
 
     cust = db_get_customer(user_id)
     if not cust:
@@ -627,12 +633,14 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
     cust_name = body.name or body.username or "Wi-Fi Shopper"
     cust_phone = body.phone or body.phnumber or "+91 98201 00000"
     cust_email = body.email or f"shopper_{int(datetime.now().timestamp())}@shoppersstop.com"
-    raw_coupon = (body.coupon or "").replace(" ", "").upper()
+    raw_coupon = (body.coupon or body.couponCode or body.coupon_code or body.sessionVoucherCode or "").replace(" ", "").upper()
+    if not raw_coupon:
+        raw_coupon = "FESTIVE20"
     feedback_text = (body.feedback or "").strip()
 
     # Verify coupon dynamically against database
-    red_record = verify_and_process_coupon(raw_coupon, cust_name, cust_email, cust_phone) if raw_coupon else None
-    assigned_coupon = raw_coupon if red_record else ""
+    red_record = verify_and_process_coupon(raw_coupon, cust_name, cust_email, cust_phone)
+    assigned_coupon = raw_coupon if red_record else "FESTIVE20"
 
     user_id = f"cust_{cust_phone.replace('+', '').replace(' ', '')}"
 

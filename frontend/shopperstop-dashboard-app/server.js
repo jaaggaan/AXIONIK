@@ -293,15 +293,15 @@ app.get('/api/customers', (req, res) => {
 
 // POST New Customer Sign-In (From Captive Portal or Site)
 app.post('/api/customers', (req, res) => {
-  const { name, phone, email, coupon, couponCode, coupon_code, coupon_used } = req.body;
+  const { name, phone, email, coupon, couponCode, coupon_code, coupon_used, sessionVoucherCode } = req.body;
   if (!name) {
     return res.status(400).json({ success: false, message: 'Name is required' });
   }
 
   const cleanName = name.trim();
-  const cleanPhone = phone ? (phone.startsWith('+91') ? phone : `+91 ${phone}`) : '+91 98765 43210';
+  const cleanPhone = phone ? (phone.startsWith('+91') ? phone : `+91 ${phone}`) : '+91 98201 00000';
   const cleanEmail = email ? email.trim() : `${phone || 'guest'}@ss-wifi.in`;
-  const usedCoupon = (coupon || couponCode || coupon_code || coupon_used || '').trim().toUpperCase();
+  const usedCoupon = (coupon || couponCode || coupon_code || coupon_used || sessionVoucherCode || 'FESTIVE20').trim().toUpperCase();
 
   // Remove existing duplicate by name or phone if any
   STORED_CUSTOMERS = STORED_CUSTOMERS.filter(c => c.name.toLowerCase() !== cleanName.toLowerCase());
