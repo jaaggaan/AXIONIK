@@ -514,7 +514,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   <tr key={order.id} className="hover:bg-gray-50/60 transition-colors">
                     {/* Date */}
                     <td className="py-3.5 px-4 font-medium text-gray-500 font-mono">
-                      {order.date.split('-').reverse().join('.')}
+                      {(order.date || order.orderDate || '2026-08-04').toString().split(' ')[0].split('-').reverse().join('.')}
                     </td>
 
                     {/* Customer Name */}

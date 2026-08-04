@@ -79,7 +79,7 @@ export const InventoryTab: React.FC<InventoryTabProps> = ({
       'Online Store (eCom Direct)': 'ECOM',
     };
     const prefix = prefixMap[store] || 'SS';
-    const storeShort = store.split(' - ')[0];
+    const storeShort = (store || '').split(' - ')[0] || 'Store';
 
     return items.map((item) => ({
       ...item,

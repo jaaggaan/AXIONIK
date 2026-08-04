@@ -73,12 +73,13 @@ export const CouponsTab: React.FC<CouponsTabProps> = ({ coupons, onCreateCoupon 
 
   const activeRedemptions = selectedCouponForRedemptions?.redemptions || [];
   const filteredRedemptions = activeRedemptions.filter((r) => {
-    const q = redemptionSearchTerm.toLowerCase();
+    if (!r) return false;
+    const q = (redemptionSearchTerm || '').toLowerCase();
     return (
-      r.customerName.toLowerCase().includes(q) ||
-      r.customerEmail.toLowerCase().includes(q) ||
-      r.orderId.toLowerCase().includes(q) ||
-      r.storeLocation.toLowerCase().includes(q)
+      (r.customerName || '').toLowerCase().includes(q) ||
+      (r.customerEmail || '').toLowerCase().includes(q) ||
+      (r.orderId || '').toLowerCase().includes(q) ||
+      (r.storeLocation || '').toLowerCase().includes(q)
     );
   });
 

@@ -96,8 +96,8 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
 
   const filteredCustomers = customers.filter((cust) => {
     const matchesSearch =
-      cust.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cust.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (cust.name || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+      (cust.email || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
       cust.phone.includes(searchTerm);
 
     const matchesTier = tierFilter === 'All' || cust.loyaltyTier === tierFilter;

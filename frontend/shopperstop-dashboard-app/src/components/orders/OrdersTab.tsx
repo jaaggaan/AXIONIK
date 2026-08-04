@@ -54,9 +54,9 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.id || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+      (order.customerName || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+      (order.customerEmail || '').toLowerCase().includes((searchTerm || '').toLowerCase());
 
     const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
     const matchesPayment = paymentFilter === 'All' || order.paymentMethod === paymentFilter;

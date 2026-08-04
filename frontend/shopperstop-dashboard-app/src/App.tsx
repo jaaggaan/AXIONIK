@@ -170,7 +170,7 @@ export default function App() {
             setCustomers(prev => {
               const merged = [...prev];
               apiCusts.forEach(ac => {
-                if (ac.email && !merged.some(m => m.email.toLowerCase() === ac.email.toLowerCase())) {
+                if (ac.email && !merged.some(m => m && m.email && (m.email || '').toLowerCase() === (ac.email || '').toLowerCase())) {
                   merged.unshift(ac);
                 }
               });
@@ -274,7 +274,7 @@ export default function App() {
                   }));
 
                   const existingReds = cpn.redemptions || [];
-                  const unmerged = formattedReds.filter(fr => !existingReds.some(er => er.customerName.toLowerCase() === fr.customerName.toLowerCase() && er.couponCode === fr.couponCode));
+                  const unmerged = formattedReds.filter(fr => !existingReds.some(er => er && er.customerName && fr.customerName && (er.customerName || '').toLowerCase() === (fr.customerName || '').toLowerCase() && er.couponCode === fr.couponCode));
                   const merged = [...unmerged, ...existingReds];
 
                   return {
