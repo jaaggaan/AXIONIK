@@ -187,7 +187,7 @@ export default function App() {
     const fetchSyncedData = async () => {
       try {
         // Fetch Orders from Port 5000 API
-        const ordRes = await fetch('http://localhost:5000/api/orders');
+        const ordRes = await fetch('http://localhost:63265/api/orders');
         if (ordRes.ok) {
           const ordData = await ordRes.json();
           if (ordData.success && Array.isArray(ordData.orders)) {
@@ -198,7 +198,7 @@ export default function App() {
 
       try {
         // Fetch Customers from Port 5000 API
-        const custRes = await fetch('http://localhost:5000/api/customers');
+        const custRes = await fetch('http://localhost:63265/api/customers');
         if (custRes.ok) {
           const data = await custRes.json();
           if (data.success && Array.isArray(data.customers)) {
@@ -209,7 +209,7 @@ export default function App() {
 
       try {
         // Fetch Coupons from Port 5000 API
-        const cpnRes = await fetch('http://localhost:5000/api/coupons');
+        const cpnRes = await fetch('http://localhost:63265/api/coupons');
         if (cpnRes.ok) {
           const cpnData = await cpnRes.json();
           if (cpnData.success && Array.isArray(cpnData.coupons)) {
@@ -241,7 +241,7 @@ export default function App() {
 
       try {
         // Fetch Coupon Redemptions from Port 5000 API
-        const redRes = await fetch('http://localhost:5000/api/redemptions');
+        const redRes = await fetch('http://localhost:63265/api/redemptions');
         if (redRes.ok) {
           const data = await redRes.json();
           if (data.success && Array.isArray(data.redemptions)) {

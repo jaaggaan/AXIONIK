@@ -65,7 +65,7 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
     }
 
     // 2. Post to Telemetry Sync API (Port 5000)
-    fetch('http://localhost:5000/api/redemptions', {
+    fetch('http://localhost:63265/api/redemptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

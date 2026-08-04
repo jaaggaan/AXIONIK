@@ -59,7 +59,7 @@ export const CouponsTab: React.FC<CouponsTabProps> = ({ coupons, onCreateCoupon 
       redemptions: [],
     };
     try {
-      await fetch('http://localhost:5000/api/coupons', {
+      await fetch('http://localhost:63265/api/coupons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(created)

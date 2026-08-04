@@ -42,7 +42,7 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
       } catch (e) {}
 
       try {
-        const res = await fetch('http://localhost:5000/api/customers');
+        const res = await fetch('http://localhost:63265/api/customers');
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.customers)) {
@@ -280,7 +280,7 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
         };
 
-        fetch('http://localhost:5000/api/customers', {
+        fetch('http://localhost:63265/api/customers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail })

@@ -408,6 +408,34 @@ async def health_check() -> dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+
+@app.post("/api/customers")
+async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
+    name = body.get("name", "Wi-Fi Guest")
+    phone = body.get("phone", "+91 98201 00000")
+    email = body.get("email", f"{phone}@ss-wifi.in")
+    user_id = f"cust_{str(phone).replace('+', '').replace(' ', '')}"
+
+    cust = db_get_customer(user_id)
+    if not cust:
+        cust = {
+            "user_id": user_id,
+            "customer_id": user_id,
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "vip_tier": "Silver",
+            "total_spend": 0.0,
+            "points": 500,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+    else:
+        cust["name"] = name
+        cust["email"] = email or cust.get("email", "")
+    
+    db_save_customer(cust)
+    return {"success": True, "status": "ok", "customer": cust}
+
 @app.get("/api/customers")
 async def get_customers() -> dict[str, Any]:
     return {"success": True, "customers": db_list_customers()}
@@ -618,6 +646,51 @@ async def get_orders() -> dict[str, Any]:
             logger.error("Firestore orders fetch error: %s", e)
     return {"success": True, "orders": orders}
 
+
+
+@app.post("/api/redemptions")
+async def create_redemption(body: dict[str, Any]) -> dict[str, Any]:
+    import uuid
+    coupon_code = (body.get("couponCode") or body.get("code") or "").strip().upper()
+    cust_name = body.get("customerName", "Wi-Fi Guest")
+    cust_phone = body.get("customerPhone", "+91 98201 00000")
+    cust_email = body.get("customerEmail", f"{cust_phone}@ss-wifi.in")
+    store_loc = body.get("storeLocation", "Mumbai - Malad West Flagship")
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    redemption_id = f"RED-{uuid.uuid4().hex[:6].upper()}"
+
+    redemption_record = {
+        "id": redemption_id,
+        "couponCode": coupon_code,
+        "customerName": cust_name,
+        "customerEmail": cust_email,
+        "customerPhone": cust_phone,
+        "loyaltyTier": "Silver",
+        "orderId": f"SS-ORD-{uuid.uuid4().hex[:6].upper()}",
+        "orderTotal": body.get("orderTotal", 2499.0),
+        "discountSaved": body.get("discountSaved", 375.0),
+        "redeemedAt": now_str,
+        "storeLocation": store_loc
+    }
+
+    _redemptions_cache.insert(0, redemption_record)
+
+    # Increment usage count on coupon
+    for c in _coupons_cache:
+        if c.get("code", "").upper() == coupon_code:
+            c["usageCount"] = c.get("usageCount", 0) + 1
+            if "redemptions" not in c:
+                c["redemptions"] = []
+            c["redemptions"].insert(0, redemption_record)
+
+    if db is not None:
+        try:
+            db.collection("redemptions").document(redemption_id).set(redemption_record)
+        except Exception as e:
+            logger.error("Firestore redemption save error: %s", e)
+
+    return {"success": True, "status": "ok", "redemption": redemption_record}
 
 @app.get("/api/redemptions")
 async def get_redemptions() -> dict[str, Any]:
