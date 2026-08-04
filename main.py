@@ -72,6 +72,65 @@ _feedbacks_cache: list[dict[str, Any]] = [
 
 _coupons_cache: list[dict[str, Any]] = [
     {
+        "id": "CPN-101",
+        "code": "FESTIVE20",
+        "title": "Festive Discount",
+        "description": "Flat 20% off on all Ethnic & Designer Collections for First Citizen Members",
+        "discountType": "Percentage",
+        "discountValue": 20,
+        "minOrderValue": 4999,
+        "usageCount": 1420,
+        "maxUsage": 5000,
+        "status": "Active",
+        "startDate": "2026-07-01",
+        "endDate": "2026-08-15",
+        "applicableCategory": "Ethnic & Womenswear",
+        "redemptions": [
+            {
+                "id": "RED-101",
+                "couponId": "CPN-101",
+                "couponCode": "FESTIVE20",
+                "customerName": "Ananya Deshmukh",
+                "customerEmail": "ananya.d@gmail.com",
+                "customerPhone": "+91 98201 44512",
+                "loyaltyTier": "Black",
+                "orderId": "SS-ORD-98421",
+                "orderTotal": 12999,
+                "discountSaved": 2599,
+                "redeemedAt": "2026-07-27 11:42 AM",
+                "storeLocation": "Mumbai - Malad West Flagship"
+            },
+            {
+                "id": "RED-102",
+                "couponId": "CPN-101",
+                "couponCode": "FESTIVE20",
+                "customerName": "Priya Sundaram",
+                "customerEmail": "priya.sundaram@tech.in",
+                "customerPhone": "+91 99002 33110",
+                "loyaltyTier": "Golden",
+                "orderId": "SS-ORD-98419",
+                "orderTotal": 7999,
+                "discountSaved": 1600,
+                "redeemedAt": "2026-07-27 10:50 AM",
+                "storeLocation": "Bengaluru - MG Road Metro"
+            },
+            {
+                "id": "RED-103",
+                "couponId": "CPN-101",
+                "couponCode": "FESTIVE20",
+                "customerName": "Kavita Reddy",
+                "customerEmail": "kavita.reddy@gmail.com",
+                "customerPhone": "+91 97011 22900",
+                "loyaltyTier": "Black",
+                "orderId": "SS-ORD-98414",
+                "orderTotal": 16000,
+                "discountSaved": 3200,
+                "redeemedAt": "2026-07-26 06:10 PM",
+                "storeLocation": "Hyderabad - Inorbit Mall Hitec City"
+            }
+        ]
+    },
+    {
         "id": "CPN-102",
         "code": "FIRSTCITIZEN15",
         "title": "First Citizen Bonus",
@@ -87,7 +146,7 @@ _coupons_cache: list[dict[str, Any]] = [
         "applicableCategory": "Site-wide",
         "redemptions": [
             {
-                "id": "RED-101",
+                "id": "RED-201",
                 "couponId": "CPN-102",
                 "couponCode": "FIRSTCITIZEN15",
                 "customerName": "Vikramaditya Roy",
@@ -99,99 +158,43 @@ _coupons_cache: list[dict[str, Any]] = [
                 "discountSaved": 1267,
                 "redeemedAt": "2026-07-27 11:15 AM",
                 "storeLocation": "Delhi - Select CITYWALK Saket"
-            },
-            {
-                "id": "RED-102",
-                "couponId": "CPN-102",
-                "couponCode": "FIRSTCITIZEN15",
-                "customerName": "Tanvi Agarwal",
-                "customerEmail": "tanvi.agarwal@corp.in",
-                "customerPhone": "+91 98210 99887",
-                "loyaltyTier": "Platinum",
-                "orderId": "SS-ORD-98415",
-                "orderTotal": 9998,
-                "discountSaved": 1500,
-                "redeemedAt": "2026-07-26 03:10 PM",
-                "storeLocation": "Mumbai - Malad West Flagship"
-            },
-            {
-                "id": "RED-103",
-                "couponId": "CPN-102",
-                "couponCode": "FIRSTCITIZEN15",
-                "customerName": "Ananya Deshmukh",
-                "customerEmail": "ananya.d@gmail.com",
-                "customerPhone": "+91 98201 44512",
-                "loyaltyTier": "Black",
-                "orderId": "SS-ORD-98410",
-                "orderTotal": 31500,
-                "discountSaved": 4725,
-                "redeemedAt": "2026-07-25 07:20 PM",
-                "storeLocation": "Mumbai - Malad West Flagship"
-            },
-            {
-                "id": "RED-104",
-                "couponId": "CPN-102",
-                "couponCode": "FIRSTCITIZEN15",
-                "customerName": "Kavita Reddy",
-                "customerEmail": "kavita.reddy@gmail.com",
-                "customerPhone": "+91 97011 22900",
-                "loyaltyTier": "Black",
-                "orderId": "SS-ORD-98405",
-                "orderTotal": 11486,
-                "discountSaved": 1723,
-                "redeemedAt": "2026-07-24 01:45 PM",
-                "storeLocation": "Hyderabad - Inorbit Mall Hitec City"
-            }
-        ]
-    },
-    {
-        "id": "CPN-101",
-        "code": "FESTIVE20",
-        "title": "Welcome Discount",
-        "description": "Flat 20% off on all Ethnic & Designer Collections for First Citizen Members",
-        "discountType": "Percentage",
-        "discountValue": 20,
-        "minOrderValue": 4999,
-        "usageCount": 1420,
-        "maxUsage": 5000,
-        "status": "Active",
-        "startDate": "2026-07-01",
-        "endDate": "2026-08-15",
-        "applicableCategory": "Ethnic & Womenswear",
-        "redemptions": [
-            {
-                "id": "RED-201",
-                "couponId": "CPN-101",
-                "couponCode": "FESTIVE20",
-                "customerName": "Ananya Deshmukh",
-                "customerEmail": "ananya.d@gmail.com",
-                "customerPhone": "+91 98201 44512",
-                "loyaltyTier": "Black",
-                "orderId": "SS-ORD-98421",
-                "orderTotal": 12999,
-                "discountSaved": 2599,
-                "redeemedAt": "2026-07-27 11:42 AM",
-                "storeLocation": "Mumbai - Malad West Flagship"
             }
         ]
     },
     {
         "id": "CPN-103",
-        "code": "FESTIVE500",
-        "title": "Festive Special",
-        "description": "Flat ₹500 Off on orders above ₹4,999",
-        "discountType": "Flat",
-        "discountValue": 500,
-        "minOrderValue": 4999,
-        "usageCount": 850,
-        "maxUsage": 2000,
+        "code": "BEAUTYBUY2",
+        "title": "Beauty Offer",
+        "description": "Buy Beauty & Fragrance items above ₹5000 and get ₹1000 Instant Off",
+        "discountType": "Flat Amount",
+        "discountValue": 1000,
+        "minOrderValue": 5000,
+        "usageCount": 890,
+        "maxUsage": 2500,
         "status": "Active",
-        "startDate": "2026-07-01",
-        "endDate": "2026-12-31",
-        "applicableCategory": "All Categories",
+        "startDate": "2026-07-10",
+        "endDate": "2026-08-01",
+        "applicableCategory": "Beauty & Perfumes",
+        "redemptions": []
+    },
+    {
+        "id": "CPN-104",
+        "code": "ENDOFSEASON50",
+        "title": "End of Season",
+        "description": "End of Season Sale - Scheduled clearance for select Menswear lines",
+        "discountType": "Percentage",
+        "discountValue": 50,
+        "minOrderValue": 9999,
+        "usageCount": 0,
+        "maxUsage": 1000,
+        "status": "Scheduled",
+        "startDate": "2026-08-05",
+        "endDate": "2026-08-20",
+        "applicableCategory": "Menswear",
         "redemptions": []
     }
 ]
+
 
 def init_firebase(force_reload: bool = False) -> None:
     """Initializes the Firebase Admin SDK client with multi-path lookup."""

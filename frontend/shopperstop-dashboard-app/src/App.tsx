@@ -39,6 +39,7 @@ export default function App() {
 
   
   // Safe Live API Sync Hook
+  // Safe Live API Sync Hook
   useEffect(() => {
     let isMounted = true;
     const fetchLiveData = async () => {
@@ -47,33 +48,40 @@ export default function App() {
         if (res.ok) {
           const data = await res.json();
           if (data && data.success && Array.isArray(data.customers) && isMounted) {
-            const apiCusts: Customer[] = data.customers.map((c: any) => ({
-              id: c.id || `FC-${Math.floor(Math.random() * 90000)}`,
-              name: c.username || c.name || "First Citizen Member",
-              email: c.email || "",
-              phone: c.phone || c.phone_number || "",
-              loyaltyTier: (c.loyaltyTier || c.vip_tier || "Black") as LoyaltyTier,
-              loyaltyPoints: Number(c.loyaltyPoints || c.points || 1250),
-              totalSpent: Number(c.totalSpent || c.total_spend || c.lifetimeSpend || 125000),
-              totalOrders: Number(c.totalOrders || c.ordersCount || 10),
-              lastPurchaseDate: "2026-08-02",
-              preferredCategory: c.preferredCategory || "Luxury Watches & Accessories",
-              joinedDate: "2026-01-15",
-              avatar: c.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
-              storeLocation: c.storeLocation || "Mumbai - Malad West Flagship"
-            }));
+            const apiCusts: Customer[] = data.customers.map((c: any) => {
+              const rawSpend = c.totalSpent ?? c.total_spend ?? c.lifetimeSpend;
+              const rawPoints = c.loyaltyPoints ?? c.points;
+              return {
+                id: c.id || c.user_id || c.customer_id || `FC-${Math.floor(Math.random() * 90000)}`,
+                name: c.name || c.username || "First Citizen Member",
+                email: c.email || "",
+                phone: c.phone || c.phone_number || "",
+                loyaltyTier: (c.loyaltyTier || c.vip_tier || "Black First Citizen") as LoyaltyTier,
+                loyaltyPoints: typeof rawPoints === 'number' ? rawPoints : Number(rawPoints || 1250),
+                totalSpent: typeof rawSpend === 'number' ? rawSpend : Number(rawSpend || 125000),
+                totalOrders: Number(c.totalOrders || c.ordersCount || 10),
+                lastPurchaseDate: "2026-08-02",
+                preferredCategory: c.preferredCategory || "Luxury Watches & Accessories",
+                joinedDate: "2026-01-15",
+                avatar: c.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
+                storeLocation: c.storeLocation || "Mumbai - Malad West Flagship"
+              };
+            });
 
             setCustomers(prev => {
               if (!Array.isArray(prev)) return prev;
               const merged = [...prev];
               apiCusts.forEach(ac => {
-                if (ac && ac.email) {
-                  const existingIdx = merged.findIndex(m => m && m.email && m.email.toLowerCase() === ac.email.toLowerCase());
-                  if (existingIdx !== -1) {
-                    merged[existingIdx] = { ...merged[existingIdx], ...ac };
-                  } else {
-                    merged.unshift(ac);
-                  }
+                if (!ac) return;
+                const existingIdx = merged.findIndex(m => 
+                  (m.email && ac.email && m.email.trim() !== "" && m.email.toLowerCase() === ac.email.toLowerCase()) ||
+                  (m.phone && ac.phone && m.phone.trim() !== "" && m.phone === ac.phone) ||
+                  (m.name && ac.name && m.name.trim().toLowerCase() === ac.name.trim().toLowerCase())
+                );
+                if (existingIdx !== -1) {
+                  merged[existingIdx] = { ...merged[existingIdx], ...ac };
+                } else {
+                  merged.unshift(ac);
                 }
               });
               return merged;
@@ -134,6 +142,46 @@ export default function App() {
           }
         }
       } catch (e) {}
+
+      try {
+        const resC = await fetch("http://localhost:63265/api/coupons");
+        if (resC.ok) {
+          const dataC = await resC.json();
+          if (dataC && dataC.success && Array.isArray(dataC.coupons) && isMounted) {
+            const serverCoupons = dataC.coupons;
+            setCoupons(prevCoupons => {
+              if (!Array.isArray(prevCoupons)) return prevCoupons;
+              const merged = [...prevCoupons];
+              serverCoupons.forEach((sc: any) => {
+                if (!sc || !sc.code) return;
+                const cleanCode = sc.code.toString().replace(/\s+/g, '').toUpperCase();
+                const idx = merged.findIndex(pc => pc && pc.code && pc.code.toString().replace(/\s+/g, '').toUpperCase() === cleanCode);
+                const formatted = {
+                  id: sc.id || `CPN-${Date.now()}`,
+                  code: sc.code.toUpperCase(),
+                  description: sc.description || 'Promotional Offer',
+                  discountType: sc.discountType || 'Percentage',
+                  discountValue: Number(sc.discountValue) || 10,
+                  minOrderValue: Number(sc.minOrderValue) || 1999,
+                  usageCount: Math.max(sc.usageCount || 0, idx !== -1 ? merged[idx].usageCount : 0),
+                  maxUsage: sc.maxUsage || 1000,
+                  status: sc.status || 'Active',
+                  startDate: sc.startDate || '2026-07-01',
+                  endDate: sc.endDate || '2026-12-31',
+                  applicableCategory: sc.applicableCategory || 'Site-wide',
+                  redemptions: idx !== -1 ? merged[idx].redemptions : (sc.redemptions || [])
+                };
+                if (idx !== -1) {
+                  merged[idx] = { ...merged[idx], ...formatted, redemptions: merged[idx].redemptions };
+                } else {
+                  merged.push(formatted);
+                }
+              });
+              return merged;
+            });
+          }
+        }
+      } catch (e) {}
     };
 
     fetchLiveData();
@@ -144,196 +192,11 @@ export default function App() {
     };
   }, []);
 
-
-
-  // Live API Sync Hook for Customers
-  useEffect(() => {
-    const fetchLiveCustomers = async () => {
-      try {
-        const res = await fetch("http://localhost:63265/api/customers");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && Array.isArray(data.customers)) {
-            const apiCusts = data.customers.map((c: any) => ({
-              id: c.id || `FC-${Math.floor(Math.random() * 90000)}`,
-              name: c.username || c.name || "First Citizen Member",
-              email: c.email || "",
-              phone: c.phone || c.phone_number || "",
-              loyaltyTier: c.loyaltyTier || c.vip_tier || "Black",
-              lifetimeSpend: c.totalSpent || c.total_spend || 125000,
-              points: c.loyaltyPoints || 1250,
-              preferredCategory: c.preferredCategory || "Luxury Watches",
-              joinedDate: "2026-01-15",
-              storeLocation: c.storeLocation || "Mumbai - Malad West Flagship"
-            }));
-
-            setCustomers(prev => {
-              const merged = [...prev];
-              apiCusts.forEach(ac => {
-                if (ac.email && !merged.some(m => m && m.email && (m.email || '').toLowerCase() === (ac.email || '').toLowerCase())) {
-                  merged.unshift(ac);
-                }
-              });
-              return merged;
-            });
-          }
-        }
-      } catch (e) {}
-    };
-
-    fetchLiveCustomers();
-    const interval = setInterval(fetchLiveCustomers, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
   const [returns, setReturns] = useState<ReturnRecord[]>(INITIAL_RETURNS);
 
-  // Poll Telemetry Sync API on Port 5000 every 1 second
-  useEffect(() => {
-    const fetchSyncedData = async () => {
-      try {
-        // Fetch Orders from Port 5000 API
-        const ordRes = await fetch('http://localhost:63265/api/orders');
-        if (ordRes.ok) {
-          const ordData = await ordRes.json();
-          if (ordData.success && Array.isArray(ordData.orders)) {
-            setOrders(ordData.orders);
-          }
-        }
-      } catch (e) {}
-
-      try {
-        // Fetch Customers from Port 5000 API
-        const custRes = await fetch('http://localhost:63265/api/customers');
-        if (custRes.ok) {
-          const data = await custRes.json();
-          if (data.success && Array.isArray(data.customers)) {
-            setCustomers(data.customers);
-          }
-        }
-      } catch (e) {}
-
-      try {
-        // Fetch Coupons from Port 5000 API
-        const cpnRes = await fetch('http://localhost:63265/api/coupons');
-        if (cpnRes.ok) {
-          const cpnData = await cpnRes.json();
-          if (cpnData.success && Array.isArray(cpnData.coupons)) {
-            const serverCoupons = cpnData.coupons;
-            setCoupons(prevCoupons => {
-              // Merge server coupons keeping existing redemptions intact
-              return serverCoupons.map((sc: any) => {
-                const existing = prevCoupons.find(pc => pc.code.toUpperCase() === sc.code.toUpperCase());
-                return {
-                  id: sc.id || `CPN-${Date.now()}`,
-                  code: sc.code.toUpperCase(),
-                  description: sc.description || 'Promotional Offer',
-                  discountType: sc.discountType || 'Percentage',
-                  discountValue: Number(sc.discountValue) || 10,
-                  minOrderValue: Number(sc.minOrderValue) || 1999,
-                  usageCount: sc.usageCount || (existing ? existing.usageCount : 0),
-                  maxUsage: sc.maxUsage || 1000,
-                  status: sc.status || 'Active',
-                  startDate: sc.startDate || '2026-07-01',
-                  endDate: sc.endDate || '2026-12-31',
-                  applicableCategory: sc.applicableCategory || 'Site-wide',
-                  redemptions: existing ? existing.redemptions : []
-                };
-              });
-            });
-          }
-        }
-      } catch (e) {}
-
-      try {
-        // Fetch Coupon Redemptions from Port 5000 API
-        const redRes = await fetch('http://localhost:63265/api/redemptions');
-        if (redRes.ok) {
-          const data = await redRes.json();
-          if (data.success && Array.isArray(data.redemptions)) {
-            const apiRedemptions = data.redemptions;
-            setCoupons(prevCoupons => {
-              let updated = prevCoupons.map(cpn => {
-                const matchingReds = apiRedemptions.filter((r: any) => r.couponCode.toUpperCase() === cpn.code.toUpperCase());
-                if (matchingReds.length > 0) {
-                  const formattedReds: CouponRedemption[] = matchingReds.map((r: any) => ({
-                    id: r.id || `RED-${Date.now()}`,
-                    couponId: cpn.id,
-                    couponCode: cpn.code,
-                    customerName: r.customerName,
-                    customerEmail: r.customerEmail,
-                    customerPhone: r.customerPhone,
-                    loyaltyTier: 'Black',
-                    orderId: r.orderId || `SS-ORD-${Math.floor(98000 + Math.random() * 999)}`,
-                    orderTotal: r.orderTotal || (cpn.minOrderValue + 500),
-                    discountSaved: r.discountSaved || (cpn.discountType === 'Percentage' ? Math.round((cpn.minOrderValue * cpn.discountValue) / 100) : cpn.discountValue),
-                    redeemedAt: `${r.redeemedAt} (In-Store Kiosk)`,
-                    storeLocation: 'Mumbai - Malad West Flagship'
-                  }));
-
-                  const existingReds = cpn.redemptions || [];
-                  const unmerged = formattedReds.filter(fr => !existingReds.some(er => er && er.customerName && fr.customerName && (er.customerName || '').toLowerCase() === (fr.customerName || '').toLowerCase() && er.couponCode === fr.couponCode));
-                  const merged = [...unmerged, ...existingReds];
-
-                  return {
-                    ...cpn,
-                    usageCount: Math.max(cpn.usageCount, merged.length),
-                    redemptions: merged
-                  };
-                }
-                return cpn;
-              });
-
-              // Also auto-add any unseen coupon codes from API redemptions
-              apiRedemptions.forEach((r: any) => {
-                const codeUpper = r.couponCode.toUpperCase();
-                if (!updated.some(c => c.code.toUpperCase() === codeUpper)) {
-                  updated.push({
-                    id: `CPN-${Math.floor(200 + Math.random() * 800)}`,
-                    code: codeUpper,
-                    description: `Special Promotional Voucher - Code ${codeUpper}`,
-                    discountType: 'Flat Amount',
-                    discountValue: r.discountSaved || 500,
-                    minOrderValue: r.orderTotal || 1999,
-                    usageCount: 1,
-                    maxUsage: 5000,
-                    status: 'Active',
-                    startDate: '2026-07-01',
-                    endDate: '2026-12-31',
-                    applicableCategory: 'Site-wide Kiosk',
-                    redemptions: [
-                      {
-                        id: r.id || `RED-${Date.now()}`,
-                        couponId: `CPN-DYNAMIC`,
-                        couponCode: codeUpper,
-                        customerName: r.customerName,
-                        customerEmail: r.customerEmail,
-                        customerPhone: r.customerPhone,
-                        loyaltyTier: 'Black',
-                        orderId: r.orderId || `SS-ORD-${Math.floor(98000 + Math.random() * 999)}`,
-                        orderTotal: r.orderTotal || 4999,
-                        discountSaved: r.discountSaved || 500,
-                        redeemedAt: `${r.redeemedAt} (In-Store Kiosk)`,
-                        storeLocation: 'Mumbai - Malad West Flagship'
-                      }
-                    ]
-                  });
-                }
-              });
-
-              return updated;
-            });
-          }
-        }
-      } catch (e) {}
-    };
-
-    fetchSyncedData();
-    const interval = setInterval(fetchSyncedData, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  
 
   // Modals state
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
