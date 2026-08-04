@@ -324,6 +324,7 @@ def seed_demo_data() -> None:
 seed_demo_data()
 
 def db_save_customer(customer_data: dict[str, Any]) -> dict[str, Any]:
+    supabase_save_customer(customer_data)
     """Persists customer profile to Firestore and memory cache."""
     user_id = customer_data["user_id"]
     if db is not None:
@@ -618,6 +619,7 @@ def process_live_order(body: dict[str, Any]) -> dict[str, Any]:
     }
 
     _orders_cache.insert(0, order_record)
+    supabase_save_order(order_record)
     if db is not None:
         try:
             db.collection("orders").document(order_id).set(order_record)
@@ -641,6 +643,7 @@ def process_live_order(body: dict[str, Any]) -> dict[str, Any]:
             "storeLocation": store_loc
         }
         _redemptions_cache.insert(0, redemption_record)
+        supabase_save_redemption(redemption_record)
         
         # Increment usage on coupon cache
         clean_code = coupon_code.replace(" ", "").upper()
@@ -711,6 +714,7 @@ async def create_redemption(body: dict[str, Any]) -> dict[str, Any]:
     }
 
     _redemptions_cache.insert(0, redemption_record)
+    supabase_save_redemption(redemption_record)
 
     # Increment usage count on coupon
     clean_code = coupon_code.replace(" ", "").upper()

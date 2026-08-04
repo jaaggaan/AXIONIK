@@ -185,7 +185,7 @@ export default function App() {
     };
 
     fetchLiveData();
-    const interval = setInterval(fetchLiveData, 1000);
+    const interval = setInterval(fetchLiveData, 10000);
     return () => {
       isMounted = false;
       clearInterval(interval);
