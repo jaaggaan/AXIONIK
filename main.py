@@ -37,353 +37,228 @@ STORES: dict[str, dict[str, Any]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Database Layer (Firestore with Local Memory Fallback)
+# Supabase PostgreSQL Cloud Database Service
 # ---------------------------------------------------------------------------
-
-db: firestore.firestore.Client | None = None
-firebase_ready = False
-
-# ---------------------------------------------------------------------------
-# Supabase PostgreSQL Integration (Unlimited Free Cloud Database)
-# ---------------------------------------------------------------------------
-supabase_client = None
-supabase_ready = False
+supabase_client: Any = None
+supabase_ready: bool = False
 
 try:
-    from supabase import create_client, Client
-    supa_url = os.environ.get("SUPABASE_URL", "")
-    supa_key = os.environ.get("SUPABASE_KEY", "")
+    from supabase import create_client
+    supa_url = "https://stnunolvbdvbhwolrnnd.supabase.co"
+    supa_key = "sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA"
     
     config_file = "supabase_config.json"
-    if not supa_url and os.path.isfile(config_file):
+    if os.path.isfile(config_file):
         try:
             import json
             with open(config_file, "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-                supa_url = cfg.get("supabase_url", "")
-                supa_key = cfg.get("supabase_key", "")
+                if cfg.get("supabase_url"):
+                    supa_url = cfg["supabase_url"]
+                if cfg.get("supabase_key"):
+                    supa_key = cfg["supabase_key"]
         except Exception as e:
             logger.warning("Could not parse supabase_config.json: %s", e)
 
     if supa_url and supa_key:
-        supabase_client: Client = create_client(supa_url, supa_key)
+        supabase_client = create_client(supa_url, supa_key)
         supabase_ready = True
-        logger.info("✅ Supabase client connected successfully! URL: %s", supa_url)
-    else:
-        logger.info("ℹ️ Supabase credentials not set. Using local high-speed in-memory database fallback.")
+        logger.info("✅ Supabase Cloud Database connected successfully! URL: %s", supa_url)
 except Exception as exc:
-    logger.warning("Supabase initialization deferred: %s", exc)
+    logger.warning("Supabase initialization error: %s", exc)
 
 
-# Local memory cache for database operations
+def supabase_save_customer(cust: dict[str, Any]) -> None:
+    if not (supabase_ready and supabase_client):
+        return
+    try:
+        data = {
+            "id": str(cust.get("user_id") or cust.get("id") or f"cust_{cust.get('phone', '0')}"),
+            "user_id": str(cust.get("user_id") or cust.get("id") or ""),
+            "name": str(cust.get("name") or cust.get("username") or "Shoppers Stop Guest"),
+            "email": str(cust.get("email") or ""),
+            "phone": str(cust.get("phone") or ""),
+            "vip_tier": str(cust.get("vip_tier") or cust.get("loyaltyTier") or "Silver"),
+            "total_spend": float(cust.get("total_spend") or cust.get("totalSpent") or 0.0),
+            "points": int(cust.get("points") or cust.get("loyaltyPoints") or 500),
+            "created_at": str(cust.get("created_at") or datetime.now(timezone.utc).isoformat()),
+            "last_visit": str(cust.get("last_visit") or datetime.now(timezone.utc).isoformat())
+        }
+        supabase_client.table("customers").upsert(data).execute()
+        logger.info("✓ Saved customer %s to Supabase!", data["name"])
+    except Exception as e:
+        logger.error("Supabase customer save error: %s", e)
+
+
+def supabase_list_customers() -> list[dict[str, Any]]:
+    if not (supabase_ready and supabase_client):
+        return []
+    try:
+        res = supabase_client.table("customers").select("*").execute()
+        if res and res.data:
+            return res.data
+    except Exception as e:
+        logger.error("Supabase customer list error: %s", e)
+    return []
+
+
+def supabase_save_order(order: dict[str, Any]) -> None:
+    if not (supabase_ready and supabase_client):
+        return
+    try:
+        data = {
+            "id": str(order.get("id") or order.get("orderId")),
+            "order_id": str(order.get("orderId") or order.get("id")),
+            "customer_name": str(order.get("customerName") or "Guest"),
+            "customer_phone": str(order.get("customerPhone") or ""),
+            "customer_email": str(order.get("customerEmail") or ""),
+            "items": order.get("items") or [],
+            "total_amount": float(order.get("totalAmount") or order.get("finalTotal") or 0.0),
+            "coupon_code": str(order.get("couponCode") or ""),
+            "discount_saved": float(order.get("discountSaved") or 0.0),
+            "status": str(order.get("status") or "Completed"),
+            "order_date": str(order.get("orderDate") or datetime.now(timezone.utc).isoformat()),
+            "store_location": str(order.get("storeLocation") or "Mumbai - Malad West Flagship"),
+            "channel": str(order.get("channel") or "In-Store / WiFi")
+        }
+        supabase_client.table("orders").upsert(data).execute()
+        logger.info("✓ Saved order %s to Supabase!", data["order_id"])
+    except Exception as e:
+        logger.error("Supabase order save error: %s", e)
+
+
+def supabase_save_redemption(red: dict[str, Any]) -> None:
+    if not (supabase_ready and supabase_client):
+        return
+    try:
+        data = {
+            "id": str(red.get("id") or f"RED-{int(datetime.now().timestamp())}"),
+            "coupon_code": str(red.get("couponCode") or "").replace(" ", "").upper(),
+            "customer_name": str(red.get("customerName") or "Guest"),
+            "customer_email": str(red.get("customerEmail") or ""),
+            "customer_phone": str(red.get("customerPhone") or ""),
+            "loyalty_tier": str(red.get("loyaltyTier") or "Silver"),
+            "order_id": str(red.get("orderId") or ""),
+            "order_total": float(red.get("orderTotal") or 0.0),
+            "discount_saved": float(red.get("discountSaved") or 0.0),
+            "redeemed_at": str(red.get("redeemedAt") or datetime.now(timezone.utc).isoformat()),
+            "store_location": str(red.get("storeLocation") or "Mumbai - Malad West Flagship")
+        }
+        supabase_client.table("redemptions").upsert(data).execute()
+        logger.info("✓ Saved redemption %s to Supabase!", data["id"])
+    except Exception as e:
+        logger.error("Supabase redemption save error: %s", e)
+
+
+def supabase_list_redemptions() -> list[dict[str, Any]]:
+    if not (supabase_ready and supabase_client):
+        return []
+    try:
+        res = supabase_client.table("redemptions").select("*").execute()
+        if res and res.data:
+            return res.data
+    except Exception as e:
+        logger.error("Supabase redemption list error: %s", e)
+    return []
+
+
+def supabase_save_feedback(fb: dict[str, Any]) -> None:
+    if not (supabase_ready and supabase_client):
+        return
+    try:
+        data = {
+            "id": str(fb.get("id") or f"FB-{int(datetime.now().timestamp())}"),
+            "customer_name": str(fb.get("customerName") or fb.get("name") or "Guest"),
+            "customer_email": str(fb.get("customerEmail") or fb.get("email") or ""),
+            "customer_phone": str(fb.get("customerPhone") or fb.get("phone") or ""),
+            "loyalty_tier": str(fb.get("loyaltyTier") or "Gold First Citizen"),
+            "store_location": str(fb.get("storeLocation") or "Mumbai - Malad West Flagship"),
+            "category": str(fb.get("category") or "General"),
+            "rating": int(fb.get("rating") or 5),
+            "title": str(fb.get("title") or "Store Feedback"),
+            "comment": str(fb.get("comment") or fb.get("feedback") or ""),
+            "date": str(fb.get("date") or datetime.now().strftime("%Y-%m-%d")),
+            "time": str(fb.get("time") or datetime.now().strftime("%I:%M %p")),
+            "sentiment": str(fb.get("sentiment") or "Delighted"),
+            "verified_purchase": bool(fb.get("verifiedPurchase", True)),
+            "helpful_count": int(fb.get("helpfulCount") or 0),
+            "manager_response": str(fb.get("managerResponse") or "")
+        }
+        supabase_client.table("feedbacks").upsert(data).execute()
+        logger.info("✓ Saved feedback %s to Supabase!", data["id"])
+    except Exception as e:
+        logger.error("Supabase feedback save error: %s", e)
+
+
+# ---------------------------------------------------------------------------
+# Database Layer (Supabase PostgreSQL + Firestore + Local Cache)
+# ---------------------------------------------------------------------------
+
+db: Any = None
+firebase_ready: bool = False
+
 _customers_cache: dict[str, dict[str, Any]] = {}
 _visits_cache: list[dict[str, Any]] = []
 _purchases_cache: dict[str, dict[str, Any]] = {}
 _orders_cache: list[dict[str, Any]] = []
-_redemptions_cache: list[dict[str, Any]] = []
-_feedbacks_cache: list[dict[str, Any]] = [
-    {
-        "id": "REV-1001",
-        "customerName": "Ananya Deshmukh",
-        "customerEmail": "ananya.d@gmail.com",
-        "customerPhone": "+91 98201 44321",
-        "loyaltyTier": "Black",
-        "storeLocation": "Mumbai - Malad West Flagship",
-        "category": "Ethnic & Womenswear",
-        "rating": 5,
-        "title": "Exceptional Bridal Saree Consultation & Personal Styling",
-        "comment": "The personal shopper service in the Ethnic Wear department was world-class. Staff gave expert fitting guidance and escorted us to the VIP Lounge. Seamless billing!",
-        "date": "2026-08-02",
-        "time": "16:45 PM",
-        "sentiment": "Delighted",
-        "verifiedPurchase": True,
-        "helpfulCount": 24,
-        "managerResponse": "Thank you Ananya! We are thrilled to hear about your bridal styling experience at Malad Flagship."
-    }
-]
-
-_coupons_cache: list[dict[str, Any]] = [
-    {
-        "id": "CPN-101",
-        "code": "FESTIVE20",
-        "title": "Festive Discount",
-        "description": "Flat 20% off on all Ethnic & Designer Collections for First Citizen Members",
-        "discountType": "Percentage",
-        "discountValue": 20,
-        "minOrderValue": 4999,
-        "usageCount": 1420,
-        "maxUsage": 5000,
-        "status": "Active",
-        "startDate": "2026-07-01",
-        "endDate": "2026-08-15",
-        "applicableCategory": "Ethnic & Womenswear",
-        "redemptions": [
-            {
-                "id": "RED-101",
-                "couponId": "CPN-101",
-                "couponCode": "FESTIVE20",
-                "customerName": "Ananya Deshmukh",
-                "customerEmail": "ananya.d@gmail.com",
-                "customerPhone": "+91 98201 44512",
-                "loyaltyTier": "Black",
-                "orderId": "SS-ORD-98421",
-                "orderTotal": 12999,
-                "discountSaved": 2599,
-                "redeemedAt": "2026-07-27 11:42 AM",
-                "storeLocation": "Mumbai - Malad West Flagship"
-            },
-            {
-                "id": "RED-102",
-                "couponId": "CPN-101",
-                "couponCode": "FESTIVE20",
-                "customerName": "Priya Sundaram",
-                "customerEmail": "priya.sundaram@tech.in",
-                "customerPhone": "+91 99002 33110",
-                "loyaltyTier": "Golden",
-                "orderId": "SS-ORD-98419",
-                "orderTotal": 7999,
-                "discountSaved": 1600,
-                "redeemedAt": "2026-07-27 10:50 AM",
-                "storeLocation": "Bengaluru - MG Road Metro"
-            },
-            {
-                "id": "RED-103",
-                "couponId": "CPN-101",
-                "couponCode": "FESTIVE20",
-                "customerName": "Kavita Reddy",
-                "customerEmail": "kavita.reddy@gmail.com",
-                "customerPhone": "+91 97011 22900",
-                "loyaltyTier": "Black",
-                "orderId": "SS-ORD-98414",
-                "orderTotal": 16000,
-                "discountSaved": 3200,
-                "redeemedAt": "2026-07-26 06:10 PM",
-                "storeLocation": "Hyderabad - Inorbit Mall Hitec City"
-            }
-        ]
-    },
-    {
-        "id": "CPN-102",
-        "code": "FIRSTCITIZEN15",
-        "title": "First Citizen Bonus",
-        "description": "Exclusive 15% bonus discount for Black & Platinum tier members",
-        "discountType": "Percentage",
-        "discountValue": 15,
-        "minOrderValue": 2999,
-        "usageCount": 3840,
-        "maxUsage": 10000,
-        "status": "Active",
-        "startDate": "2026-01-01",
-        "endDate": "2026-12-31",
-        "applicableCategory": "Site-wide",
-        "redemptions": [
-            {
-                "id": "RED-201",
-                "couponId": "CPN-102",
-                "couponCode": "FIRSTCITIZEN15",
-                "customerName": "Vikramaditya Roy",
-                "customerEmail": "v.roy@consultant.com",
-                "customerPhone": "+91 98112 09844",
-                "loyaltyTier": "Platinum",
-                "orderId": "SS-ORD-98420",
-                "orderTotal": 8450,
-                "discountSaved": 1267,
-                "redeemedAt": "2026-07-27 11:15 AM",
-                "storeLocation": "Delhi - Select CITYWALK Saket"
-            }
-        ]
-    },
-    {
-        "id": "CPN-103",
-        "code": "BEAUTYBUY2",
-        "title": "Beauty Offer",
-        "description": "Buy Beauty & Fragrance items above ₹5000 and get ₹1000 Instant Off",
-        "discountType": "Flat Amount",
-        "discountValue": 1000,
-        "minOrderValue": 5000,
-        "usageCount": 890,
-        "maxUsage": 2500,
-        "status": "Active",
-        "startDate": "2026-07-10",
-        "endDate": "2026-08-01",
-        "applicableCategory": "Beauty & Perfumes",
-        "redemptions": []
-    },
-    {
-        "id": "CPN-104",
-        "code": "ENDOFSEASON50",
-        "title": "End of Season",
-        "description": "End of Season Sale - Scheduled clearance for select Menswear lines",
-        "discountType": "Percentage",
-        "discountValue": 50,
-        "minOrderValue": 9999,
-        "usageCount": 0,
-        "maxUsage": 1000,
-        "status": "Scheduled",
-        "startDate": "2026-08-05",
-        "endDate": "2026-08-20",
-        "applicableCategory": "Menswear",
-        "redemptions": []
-    }
-]
-
 
 def init_firebase(force_reload: bool = False) -> None:
-    """Initializes the Firebase Admin SDK client with multi-path lookup."""
     global db, firebase_ready
     try:
         if firebase_admin._apps and not force_reload:
             db = firestore.client()
             firebase_ready = True
             return
-
-        candidate_paths = [
-            os.environ.get("FIREBASE_CREDENTIALS_PATH", ""),
-            "firebase-key.json",
-            "firebasekey.json",
-            "firebase_key.json",
-            "backend/firebase-key.json",
-            "backend/firebasekey.json"
-        ]
-        # Also check any json file in directory containing 'firebase' or 'service_account'
-        import glob
-        for f in glob.glob("*.json") + glob.glob("backend/*.json"):
-            if "firebase" in f.lower() or "adminsdk" in f.lower():
-                candidate_paths.append(f)
-
-        cred_path = None
+        candidate_paths = [os.environ.get("FIREBASE_CREDENTIALS_PATH", ""), "firebase-key.json", "firebasekey.json"]
         for p in candidate_paths:
             if p and os.path.isfile(p):
-                cred_path = p
+                cred = credentials.Certificate(p)
+                firebase_admin.initialize_app(cred)
+                db = firestore.client()
+                firebase_ready = True
                 break
-
-        if cred_path:
-            # Check if file contains template placeholders
-            with open(cred_path, "r", encoding="utf-8") as f_cred:
-                raw_cred = f_cred.read()
-            if "YOUR_PRIVATE_KEY_HERE" in raw_cred or "YOUR_FIREBASE_PROJECT_ID" in raw_cred:
-                logger.warning("Notice: %s contains template placeholders. Waiting for user to paste real key from Firebase Console.", cred_path)
-                return
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            db = firestore.client()
-            firebase_ready = True
-            logger.info("Firebase Admin SDK & Firestore client initialized successfully from %s", cred_path)
-        else:
-            logger.warning("Firebase key file missing — running with local memory database fallback")
     except Exception as exc:
-        logger.error("Firebase initialization failed: %s", exc)
+        logger.warning("Firebase init skipped: %s", exc)
 
 init_firebase()
 
-def ensure_firebase_ready():
-    global firebase_ready
-    if not firebase_ready:
-        init_firebase(force_reload=True)
-    return firebase_ready
-
-
-def seed_demo_data() -> None:
-    """Seeds demo database records into local cache and Firestore."""
-    now_str = datetime.now(timezone.utc).isoformat()
-    c1 = {
-        "user_id": "cust_9876543210",
-        "name": "Priya Sharma",
-        "phone": "+919876543210",
-        "email": "priya.sharma@email.com",
-        "vip_tier": "Gold",
-        "total_spend": 14999.0,
-        "created_at": now_str,
-        "last_visit": now_str
-    }
-    c2 = {
-        "user_id": "cust_9123456789",
-        "name": "Rahul Verma",
-        "phone": "+919123456789",
-        "email": "rahul.v@email.com",
-        "vip_tier": "Platinum",
-        "total_spend": 28400.0,
-        "created_at": now_str,
-        "last_visit": now_str
-    }
-    _customers_cache[c1["user_id"]] = c1
-    _customers_cache[c2["user_id"]] = c2
-
-    v1 = {
-        "user_id": "cust_9876543210",
-        "customer_name": "Priya Sharma",
-        "customer_phone": "+919876543210",
-        "store_id": STORE_SHOPPERS_STOP,
-        "store_name": "SHOPPERS STOP Flagship",
-        "platform": "ESP32_WiFi",
-        "timestamp": now_str,
-        "push_status": "connected"
-    }
-    _visits_cache.append(v1)
-
-seed_demo_data()
-
 def db_save_customer(customer_data: dict[str, Any]) -> dict[str, Any]:
+    user_id = customer_data.get("user_id") or customer_data.get("id") or "cust_unknown"
+    customer_data["user_id"] = user_id
+    _customers_cache[user_id] = customer_data
     supabase_save_customer(customer_data)
-    """Persists customer profile to Firestore and memory cache."""
-    user_id = customer_data["user_id"]
     if db is not None:
         try:
             db.collection("customers").document(user_id).set(customer_data)
         except Exception as e:
             logger.error("Firestore customer save error: %s", e)
-    _customers_cache[user_id] = customer_data
     return customer_data
 
 def db_get_customer(user_id: str) -> dict[str, Any] | None:
-    """Retrieves customer profile by ID."""
     if user_id in _customers_cache:
         return _customers_cache[user_id]
-    if db is not None:
-        try:
-            doc = db.collection("customers").document(user_id).get()
-            if doc.exists:
-                data = doc.to_dict() or {}
-                _customers_cache[user_id] = data
-                return data
-        except Exception as e:
-            logger.error("Firestore customer fetch error: %s", e)
+    supa_custs = supabase_list_customers()
+    for sc in supa_custs:
+        if sc.get("user_id") == user_id or sc.get("id") == user_id:
+            return sc
     return None
 
 def db_list_customers() -> list[dict[str, Any]]:
-    """Returns list of registered customer profiles."""
-    if db is not None:
-        try:
-            docs = db.collection("customers").get()
-            res = []
-            for doc in docs:
-                data = doc.to_dict() or {}
-                res.append(data)
-            if res:
-                return res
-        except Exception as e:
-            logger.error("Firestore customer list error: %s", e)
+    supa_custs = supabase_list_customers()
+    if supa_custs:
+        # Merge with in-memory cache
+        cache_list = list(_customers_cache.values())
+        for sc in supa_custs:
+            uid = sc.get("user_id") or sc.get("id")
+            if uid and not any(c.get("user_id") == uid for c in cache_list):
+                cache_list.append(sc)
+        return cache_list
     return list(_customers_cache.values())
 
 def db_save_visit(visit_data: dict[str, Any]) -> None:
-    """Persists visit check-in record."""
-    if db is not None:
-        try:
-            db.collection("visits").add(visit_data)
-        except Exception as e:
-            logger.error("Firestore visit save error: %s", e)
     _visits_cache.insert(0, visit_data)
 
 def db_list_visits() -> list[dict[str, Any]]:
-    """Returns visit check-in feed."""
-    if db is not None:
-        try:
-            docs = db.collection("visits").limit(20).get()
-            res = [d.to_dict() for d in docs if d.exists]
-            if res:
-                return res
-        except Exception as e:
-            logger.error("Firestore visits list error: %s", e)
     return _visits_cache
 
 def calculate_vip_tier(spend: float) -> str:
