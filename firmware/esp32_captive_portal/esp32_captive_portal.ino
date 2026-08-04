@@ -80,20 +80,33 @@ void handleRoot() {
 
 void forwardCheckinToBackend(String jsonBody) {
 #if defined(ESP32)
+  if (WiFi.status() != WL_CONNECTED) return;
   HTTPClient http;
+
+  // Try /api/signin first (handles login + feedback)
   String url1 = "http://" + String(BACKEND_HOST) + ":" + String(BACKEND_PORT) + "/api/signin";
   http.begin(url1);
   http.addHeader("Content-Type", "application/json");
   http.setTimeout(2000);
   int code = http.POST(jsonBody);
   http.end();
-
   if (code > 0) {
-    logPrintln("  [BACKEND SYNC SUCCESS] HTTP " + String(code) + " -> " + url1);
-    return;
+    logPrintln("  [BACKEND SYNC] HTTP " + String(code) + " -> " + url1);
+  }
+
+  // Also try /api/feedback (dedicated feedback handler -> saves to Supabase feedbacks table)
+  String url2 = "http://" + String(BACKEND_HOST) + ":" + String(BACKEND_PORT) + "/api/feedback";
+  http.begin(url2);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(2000);
+  int code2 = http.POST(jsonBody);
+  http.end();
+  if (code2 > 0) {
+    logPrintln("  [FEEDBACK SYNC] HTTP " + String(code2) + " -> " + url2);
   }
 #endif
 }
+
 
 void handleApiSignin() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -103,6 +116,8 @@ void handleApiSignin() {
   String email = "";
   String coupon = "";
   String feedback = "";
+  String sentiment = "";
+  String rating = "";
 
   if (server.hasArg("plain") && server.arg("plain").length() > 0) {
     String body = server.arg("plain");
@@ -121,26 +136,70 @@ void handleApiSignin() {
       int endIdx = body.indexOf("\"", emailIdx + 9);
       if (endIdx != -1) email = body.substring(emailIdx + 9, endIdx);
     }
+    int cpnIdx = body.indexOf("\"coupon\":\"");
+    if (cpnIdx != -1) {
+      int endIdx = body.indexOf("\"", cpnIdx + 10);
+      if (endIdx != -1) coupon = body.substring(cpnIdx + 10, endIdx);
+    }
+    if (coupon.length() == 0) {
+      int cpnCodeIdx = body.indexOf("\"couponCode\":\"");
+      if (cpnCodeIdx != -1) {
+        int endIdx = body.indexOf("\"", cpnCodeIdx + 14);
+        if (endIdx != -1) coupon = body.substring(cpnCodeIdx + 14, endIdx);
+      }
+    }
+    int sentIdx = body.indexOf("\"sentiment\":\"");
+    if (sentIdx != -1) {
+      int endIdx = body.indexOf("\"", sentIdx + 13);
+      if (endIdx != -1) sentiment = body.substring(sentIdx + 13, endIdx);
+    }
+    int ratIdx = body.indexOf("\"rating\":");
+    if (ratIdx != -1) {
+      rating = body.substring(ratIdx + 9, ratIdx + 10);
+    }
+    int fbIdx = body.indexOf("\"feedback\":\"");
+    if (fbIdx != -1) {
+      int endIdx = body.indexOf("\"", fbIdx + 12);
+      if (endIdx != -1) feedback = body.substring(fbIdx + 12, endIdx);
+    }
+    if (feedback.length() == 0) {
+      int commentIdx = body.indexOf("\"comment\":\"");
+      if (commentIdx != -1) {
+        int endIdx = body.indexOf("\"", commentIdx + 11);
+        if (endIdx != -1) feedback = body.substring(commentIdx + 11, endIdx);
+      }
+    }
   }
 
   if (server.hasArg("name")) name = server.arg("name");
   if (server.hasArg("username")) name = server.arg("username");
   if (server.hasArg("phone")) phone = server.arg("phone");
-  if (server.hasArg("phnumber")) phone = server.arg("phnumber");
   if (server.hasArg("email")) email = server.arg("email");
   if (server.hasArg("coupon")) coupon = server.arg("coupon");
+  if (server.hasArg("sentiment")) sentiment = server.arg("sentiment");
   if (server.hasArg("feedback")) feedback = server.arg("feedback");
 
-  if (name.length() > 0 || phone.length() > 0 || email.length() > 0) {
-    String jsonOutput = "{\"name\":\"" + name + "\",\"phone\":\"" + phone + "\",\"email\":\"" + email + "\",\"coupon\":\"" + coupon + "\",\"feedback\":\"" + feedback + "\"}";
+  if (name.length() > 0 || phone.length() > 0 || email.length() > 0 || feedback.length() > 0 || sentiment.length() > 0) {
+    String jsonOutput = "{\"name\":\"" + name + "\",\"phone\":\"" + phone + "\",\"email\":\"" + email + "\",\"coupon\":\"" + coupon + "\",\"sentiment\":\"" + sentiment + "\",\"rating\":\"" + rating + "\",\"feedback\":\"" + feedback + "\"}";
     
-    Serial.println("\n==========================================");
-    Serial.println("  [LOGIN LOG] NEW USER SIGNED IN TO PORTAL!");
-    Serial.println("==========================================");
+    Serial.println("\n==================================================");
+    if (feedback.length() > 0 || sentiment.length() > 0) {
+      Serial.println("  ★ REAL-TIME ESP32 PORTAL FEEDBACK CAPTURED ★");
+    } else {
+      Serial.println("  [LOGIN LOG] NEW USER SIGNED IN TO PORTAL!");
+    }
+    Serial.println("==================================================");
+    Serial.println("Customer: " + name + " | Phone: " + phone + " | Email: " + email);
+    if (sentiment.length() > 0) {
+      Serial.println("Sentiment: " + sentiment + " | Rating: " + (rating.length() > 0 ? rating : "5") + "/5");
+    }
+    if (feedback.length() > 0) {
+      Serial.println("Feedback Comment: \"" + feedback + "\"");
+    }
     Serial.print("User Data: ");
     Serial.println(jsonOutput);
     Serial.flush();
-    Serial.println("==========================================\n");
+    Serial.println("==================================================\n");
 
     forwardCheckinToBackend(jsonOutput);
   }

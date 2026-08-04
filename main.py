@@ -5,9 +5,15 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import time
 from datetime import datetime, timezone
 from typing import Any
+
+ACTIVE_COUPON_CODES = ["FESTIVE20", "FIRSTCITIZEN15", "BEAUTYBUY2", "ENDOFSEASON50"]
+
+def get_random_coupon_code() -> str:
+    return random.choice(ACTIVE_COUPON_CODES)
 
 import firebase_admin
 from fastapi import FastAPI, HTTPException
@@ -73,6 +79,8 @@ def supabase_save_customer(cust: dict[str, Any]) -> None:
     if not (supabase_ready and supabase_client):
         return
     try:
+        incoming_cpn = str(cust.get("coupon") or cust.get("couponCode") or cust.get("coupon_code") or cust.get("sessionVoucherCode") or cust.get("assigned_coupon") or "")
+        assigned_cpn = incoming_cpn.strip().upper() if incoming_cpn else get_random_coupon_code()
         data = {
             "id": str(cust.get("user_id") or cust.get("id") or f"cust_{cust.get('phone', '0')}"),
             "user_id": str(cust.get("user_id") or cust.get("id") or ""),
@@ -82,7 +90,7 @@ def supabase_save_customer(cust: dict[str, Any]) -> None:
             "vip_tier": str(cust.get("vip_tier") or cust.get("loyaltyTier") or "Silver"),
             "total_spend": float(cust.get("total_spend") or cust.get("totalSpent") or 0.0),
             "points": int(cust.get("points") or cust.get("loyaltyPoints") or 500),
-            "assigned_coupon": str(cust.get("assigned_coupon") or cust.get("coupon") or cust.get("coupon_code") or cust.get("couponCode") or ""),
+            "assigned_coupon": assigned_cpn,
             "created_at": str(cust.get("created_at") or datetime.now(timezone.utc).isoformat()),
             "last_visit": str(cust.get("last_visit") or datetime.now(timezone.utc).isoformat())
         }
@@ -277,6 +285,11 @@ def supabase_save_feedback(fb: dict[str, Any]) -> None:
     if not (supabase_ready and supabase_client):
         return
     try:
+        raw_rating = fb.get("rating") or 5
+        try:
+            rating_int = int(raw_rating)
+        except (ValueError, TypeError):
+            rating_int = 5
         data = {
             "id": str(fb.get("id") or f"FB-{int(datetime.now().timestamp())}"),
             "customer_name": str(fb.get("customerName") or fb.get("name") or "Guest"),
@@ -285,7 +298,7 @@ def supabase_save_feedback(fb: dict[str, Any]) -> None:
             "loyalty_tier": str(fb.get("loyaltyTier") or "Gold First Citizen"),
             "store_location": str(fb.get("storeLocation") or "Mumbai - Malad West Flagship"),
             "category": str(fb.get("category") or "General"),
-            "rating": int(fb.get("rating") or 5),
+            "rating": rating_int,
             "title": str(fb.get("title") or "Store Feedback"),
             "comment": str(fb.get("comment") or fb.get("feedback") or ""),
             "date": str(fb.get("date") or datetime.now().strftime("%Y-%m-%d")),
@@ -296,9 +309,10 @@ def supabase_save_feedback(fb: dict[str, Any]) -> None:
             "manager_response": str(fb.get("managerResponse") or "")
         }
         supabase_client.table("feedbacks").upsert(data).execute()
-        logger.info("✓ Saved feedback %s to Supabase!", data["id"])
+        logger.info("✓ Saved feedback %s (%s | %s) to Supabase!", data["id"], data["customer_name"], data["sentiment"])
     except Exception as e:
         logger.error("Supabase feedback save error: %s", e)
+
 
 
 # ---------------------------------------------------------------------------
@@ -497,6 +511,9 @@ class SigninPayload(BaseModel):
     coupon_code: str | None = ""
     sessionVoucherCode: str | None = ""
     feedback: str | None = ""
+    comment: str | None = ""
+    sentiment: str | None = ""
+    rating: str | None = ""
 
 class CouponPayload(BaseModel):
     code: str
@@ -519,7 +536,7 @@ async def health_check() -> dict[str, Any]:
 def verify_and_process_coupon(coupon_code: str, name: str, email: str, phone: str) -> dict[str, Any] | None:
     clean_code = (coupon_code or "").replace(" ", "").upper()
     if not clean_code:
-        clean_code = "FESTIVE20"
+        clean_code = get_random_coupon_code()
 
     # Check Supabase coupons table or local cache to verify coupon existence
     valid_coupon = None
@@ -538,9 +555,7 @@ def verify_and_process_coupon(coupon_code: str, name: str, email: str, phone: st
                 break
 
     if not valid_coupon:
-        logger.info("ℹ Coupon code '%s' not found in database — fallback to FESTIVE20", clean_code)
-        clean_code = "FESTIVE20"
-        valid_coupon = _coupons_cache[0] if _coupons_cache else {"code": "FESTIVE20", "discountValue": 20, "minOrderValue": 4999}
+        valid_coupon = {"code": clean_code, "discountValue": 20, "minOrderValue": 4999}
 
     # Verified coupon found! Record redemption
     import uuid
@@ -584,13 +599,13 @@ async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
     email = body.get("email") or f"{phone}@ss-wifi.in"
     raw_coupon = (body.get("coupon") or body.get("couponCode") or body.get("coupon_code") or body.get("sessionVoucherCode") or "").replace(" ", "").upper()
     if not raw_coupon:
-        raw_coupon = "FESTIVE20"
+        raw_coupon = get_random_coupon_code()
 
     user_id = f"cust_{str(phone).replace('+', '').replace(' ', '')}"
 
     # Verify coupon dynamically against database
     red_record = verify_and_process_coupon(raw_coupon, name, email, phone)
-    assigned_coupon = raw_coupon if red_record else "FESTIVE20"
+    assigned_coupon = raw_coupon if red_record else get_random_coupon_code()
 
     cust = db_get_customer(user_id)
     if not cust:
@@ -604,13 +619,14 @@ async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
             "total_spend": 12500.0,
             "points": 1250,
             "assigned_coupon": assigned_coupon,
+            "coupon": assigned_coupon,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     else:
         cust["name"] = name
         cust["email"] = email or cust.get("email", "")
-        if assigned_coupon:
-            cust["assigned_coupon"] = assigned_coupon
+        cust["assigned_coupon"] = assigned_coupon
+        cust["coupon"] = assigned_coupon
     
     db_save_customer(cust)
 
@@ -620,6 +636,78 @@ async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
 @app.get("/api/customers")
 async def get_customers() -> dict[str, Any]:
     return {"success": True, "customers": db_list_customers()}
+
+@app.post("/api/feedback")
+async def save_user_feedback(body: dict[str, Any]) -> dict[str, Any]:
+    import uuid
+    cust_name = body.get("name") or body.get("customerName") or "Wi-Fi Guest"
+    cust_phone = body.get("phone") or body.get("customerPhone") or "+91 98201 00000"
+    cust_email = body.get("email") or body.get("customerEmail") or f"shopper_{int(time.time())}@shoppersstop.com"
+    feedback_txt = (body.get("feedback") or body.get("comment") or "").strip()
+    raw_sentiment = body.get("sentiment") or body.get("rating") or "Liked"
+    
+    sentiment_txt = "Liked" if str(raw_sentiment).lower() in ["liked", "like", "up", "positive", "5"] else ("Disliked" if str(raw_sentiment).lower() in ["disliked", "dislike", "down", "negative", "1"] else "Liked")
+    rating_val = 5 if sentiment_txt == "Liked" else 1
+
+    fb_id = f"FB-{uuid.uuid4().hex[:6].upper()}"
+    fb_record = {
+        "id": fb_id,
+        "customerName": cust_name,
+        "customerEmail": cust_email,
+        "customerPhone": cust_phone,
+        "loyaltyTier": "Gold First Citizen",
+        "storeLocation": body.get("storeLocation") or "Mumbai - Malad West Flagship",
+        "category": body.get("category") or "Captive Portal Feedback",
+        "rating": rating_val,
+        "title": f"Wi-Fi Guest Feedback ({sentiment_txt})",
+        "comment": feedback_txt or (f"{sentiment_txt} the store experience"),
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "time": datetime.now().strftime("%I:%M %p"),
+        "sentiment": sentiment_txt,
+        "verifiedPurchase": True,
+        "helpfulCount": 1,
+        "managerResponse": ""
+    }
+
+    _feedbacks_cache.insert(0, fb_record)
+    supabase_save_feedback(fb_record)
+
+    if firebase_ready and db:
+        try:
+            db.collection("feedbacks").document(fb_id).set(fb_record, merge=True)
+            db.collection("customers").document(cust_email or cust_phone).collection("feedbacks").document(fb_id).set(fb_record, merge=True)
+            logger.info("✓ Saved feedback %s to Firebase Firestore!", fb_id)
+        except Exception as fe:
+            logger.error("Firestore feedback sync error: %s", fe)
+
+    print("\n==================================================================", flush=True)
+    print(f"★ REAL-TIME ESP32 PORTAL FEEDBACK CAPTURED ★", flush=True)
+    print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email}", flush=True)
+    print(f"Sentiment: {sentiment_txt} ({'👍 Liked' if sentiment_txt == 'Liked' else '👎 Disliked'}) | Rating: {rating_val}/5", flush=True)
+    print(f"Feedback Comment: \"{fb_record['comment']}\"", flush=True)
+    print("==================================================================\n", flush=True)
+
+    return {"success": True, "feedback": fb_record}
+
+@app.get("/api/feedbacks")
+async def get_all_feedbacks() -> dict[str, Any]:
+    global _feedbacks_cache
+    supa_fb = []
+    if supabase_ready and supabase_client:
+        try:
+            res = supabase_client.table("feedbacks").select("*").execute()
+            if res and res.data:
+                supa_fb = res.data
+        except Exception as e:
+            logger.error("Supabase list feedbacks error: %s", e)
+    
+    all_fb = list(supa_fb)
+    existing_ids = {str(f.get("id")) for f in all_fb}
+    for item in _feedbacks_cache:
+        if str(item.get("id")) not in existing_ids:
+            all_fb.append(item)
+
+    return {"success": True, "feedbacks": all_fb}
 
 @app.get("/api/activity")
 async def get_activity() -> list[dict[str, Any]]:
@@ -635,12 +723,12 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
     cust_email = body.email or f"shopper_{int(datetime.now().timestamp())}@shoppersstop.com"
     raw_coupon = (body.coupon or body.couponCode or body.coupon_code or body.sessionVoucherCode or "").replace(" ", "").upper()
     if not raw_coupon:
-        raw_coupon = "FESTIVE20"
+        raw_coupon = get_random_coupon_code()
     feedback_text = (body.feedback or "").strip()
 
     # Verify coupon dynamically against database
     red_record = verify_and_process_coupon(raw_coupon, cust_name, cust_email, cust_phone)
-    assigned_coupon = raw_coupon if red_record else "FESTIVE20"
+    assigned_coupon = raw_coupon if red_record else get_random_coupon_code()
 
     user_id = f"cust_{cust_phone.replace('+', '').replace(' ', '')}"
 
@@ -650,7 +738,8 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
             **existing,
             "name": cust_name,
             "email": cust_email or existing.get("email", ""),
-            "assigned_coupon": assigned_coupon or existing.get("assigned_coupon", ""),
+            "assigned_coupon": assigned_coupon,
+            "coupon": assigned_coupon,
             "last_visit": now_str
         }
     else:
@@ -663,6 +752,7 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
             "total_spend": 12500.0,
             "points": 1250,
             "assigned_coupon": assigned_coupon,
+            "coupon": assigned_coupon,
             "created_at": now_str,
             "last_visit": now_str
         }
@@ -670,7 +760,12 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
     db_save_customer(cust)
 
     # Process Customer Feedback if provided via Captive Portal
-    if feedback_text:
+    raw_sentiment = getattr(body, "sentiment", "") or getattr(body, "rating", "") or ""
+    sentiment_txt = "Liked" if str(raw_sentiment).lower() in ["liked", "like", "up", "positive", "5"] else ("Disliked" if str(raw_sentiment).lower() in ["disliked", "dislike", "down", "negative", "1"] else "Liked")
+    rating_val = 5 if sentiment_txt == "Liked" else 1
+    feedback_text_full = feedback_text or getattr(body, "comment", "") or ""
+
+    if feedback_text_full or raw_sentiment:
         fb_id = f"FB-{uuid.uuid4().hex[:6].upper()}"
         fb_record = {
             "id": fb_id,
@@ -680,12 +775,12 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
             "loyaltyTier": "Gold First Citizen",
             "storeLocation": "Mumbai - Malad West Flagship",
             "category": "Captive Portal Feedback",
-            "rating": 5,
-            "title": "Portal WiFi Feedback",
-            "comment": feedback_text,
+            "rating": rating_val,
+            "title": f"Wi-Fi Guest Feedback ({sentiment_txt})",
+            "comment": feedback_text_full or (f"{sentiment_txt} the store experience"),
             "date": datetime.now().strftime("%Y-%m-%d"),
             "time": datetime.now().strftime("%I:%M %p"),
-            "sentiment": "Delighted",
+            "sentiment": sentiment_txt,
             "verifiedPurchase": True,
             "helpfulCount": 1,
             "managerResponse": ""
@@ -693,10 +788,21 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
         _feedbacks_cache.insert(0, fb_record)
         supabase_save_feedback(fb_record)
 
-    print("\n==================================================================", flush=True)
-    print(f"* REAL-TIME ESP32 WI-FI SIGN-IN RECEIVED VIA PORTAL *", flush=True)
-    print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email} | Coupon: {coupon_code} | Feedback: {feedback_text}", flush=True)
-    print("==================================================================\n", flush=True)
+        if firebase_ready and db:
+            try:
+                db.collection("feedbacks").document(fb_id).set(fb_record, merge=True)
+                db.collection("customers").document(cust_email or user_id).collection("feedbacks").document(fb_id).set(fb_record, merge=True)
+                logger.info("✓ Saved feedback %s (Sentiment: %s) to Firebase Firestore!", fb_id, sentiment_txt)
+            except Exception as fe:
+                logger.error("Firestore feedback sync error: %s", fe)
+
+        print("\n==================================================================", flush=True)
+        print(f"★ REAL-TIME ESP32 WI-FI FEEDBACK CAPTURED ★", flush=True)
+        print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email}", flush=True)
+        print(f"Sentiment: {sentiment_txt} ({'👍 Liked' if sentiment_txt == 'Liked' else '👎 Disliked'}) | Rating: {rating_val}/5", flush=True)
+        coupon_used = getattr(body, "coupon", "") or getattr(body, "couponCode", "") or raw_coupon or ""
+        print(f"Coupon: {coupon_used} | Feedback Comment: \"{fb_record['comment']}\"", flush=True)
+        print("==================================================================\n", flush=True)
 
     if firebase_ready and db:
         try:
@@ -1369,33 +1475,33 @@ def start_serial_monitor():
                                     cust_email = payload.get("email") or payload.get("customerEmail") or f"shopper_{int(time.time())}@shoppersstop.com"
                                     cust_phone = payload.get("phone") or payload.get("customerPhone") or "+91 98201 00000"
                                     store_loc = payload.get("storeLocation") or "Mumbai - Malad West Flagship"
-                                    coupon = payload.get("coupon") or payload.get("couponCode")
+                                    coupon_raw = payload.get("coupon") or payload.get("couponCode") or payload.get("coupon_code") or payload.get("sessionVoucherCode")
+                                    coupon_code = str(coupon_raw or get_random_coupon_code()).replace(" ", "").upper()
                                     feedback_txt = payload.get("feedback") or payload.get("comment")
 
                                     print("\n==================================================================", flush=True)
                                     print(f"★ REAL-TIME ESP32 PORTAL SIGN-IN CAPTURED VIA SERIAL MONITOR ★", flush=True)
-                                    print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email}", flush=True)
-                                    if coupon:
-                                        print(f"Coupon Redeemed: {coupon}", flush=True)
+                                    print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email} | Coupon: {coupon_code}", flush=True)
                                     if feedback_txt:
                                         print(f"Customer Feedback: {feedback_txt}", flush=True)
                                     print("==================================================================\n", flush=True)
 
-                                    # Save to memory cache
+                                    # Save to memory cache & Supabase
                                     cust_obj = {
-                                        "user_id": f"cust_{cust_phone.replace('+', '')}",
+                                        "user_id": f"cust_{cust_phone.replace('+', '').replace(' ', '')}",
                                         "name": cust_name,
                                         "phone": cust_phone,
                                         "email": cust_email,
                                         "vip_tier": "Gold",
                                         "total_spend": 0.0,
+                                        "assigned_coupon": coupon_code,
+                                        "coupon": coupon_code,
                                         "created_at": datetime.now(timezone.utc).isoformat(),
                                         "last_visit": datetime.now(timezone.utc).isoformat()
                                     }
                                     db_save_customer(cust_obj)
 
                                     # Save redemption to Supabase & memory cache
-                                    coupon_code = str(coupon or "ENDOFSEASON50").replace(" ", "").upper()
                                     red_id = f"RED-{uuid.uuid4().hex[:6].upper()}"
                                     red_record = {
                                         "id": red_id,
@@ -1414,7 +1520,11 @@ def start_serial_monitor():
                                         _redemptions_cache.insert(0, red_record)
                                     supabase_save_redemption(red_record)
 
-                                    if feedback_txt:
+                                    raw_sentiment = payload.get("sentiment") or payload.get("rating") or "Liked"
+                                    sentiment_txt = "Liked" if str(raw_sentiment).lower() in ["liked", "like", "up", "positive", "5"] else ("Disliked" if str(raw_sentiment).lower() in ["disliked", "dislike", "down", "negative", "1"] else "Liked")
+                                    rating_val = 5 if sentiment_txt == "Liked" else 1
+
+                                    if feedback_txt or payload.get("sentiment"):
                                         fb_id = f"FB-{uuid.uuid4().hex[:6].upper()}"
                                         fb_record = {
                                             "id": fb_id,
@@ -1424,18 +1534,33 @@ def start_serial_monitor():
                                             "loyaltyTier": "Gold First Citizen",
                                             "storeLocation": store_loc,
                                             "category": "Captive Portal Feedback",
-                                            "rating": 5,
-                                            "title": "Portal WiFi Feedback",
-                                            "comment": feedback_txt,
+                                            "rating": rating_val,
+                                            "title": f"Wi-Fi Guest Feedback ({sentiment_txt})",
+                                            "comment": str(feedback_txt or f"{sentiment_txt} the store experience"),
                                             "date": datetime.now().strftime("%Y-%m-%d"),
                                             "time": datetime.now().strftime("%I:%M %p"),
-                                            "sentiment": "Delighted",
+                                            "sentiment": sentiment_txt,
                                             "verifiedPurchase": True,
                                             "helpfulCount": 1,
                                             "managerResponse": ""
                                         }
                                         _feedbacks_cache.insert(0, fb_record)
                                         supabase_save_feedback(fb_record)
+
+                                        if firebase_ready and db:
+                                            try:
+                                                db.collection("feedbacks").document(fb_id).set(fb_record, merge=True)
+                                                db.collection("customers").document(cust_email or cust_phone).collection("feedbacks").document(fb_id).set(fb_record, merge=True)
+                                                logger.info("✓ Saved feedback %s to Firebase Firestore!", fb_id)
+                                            except Exception as fe:
+                                                logger.error("Firestore serial feedback error: %s", fe)
+
+                                        print("\n==================================================================", flush=True)
+                                        print(f"★ REAL-TIME ESP32 SERIAL FEEDBACK CAPTURED ★", flush=True)
+                                        print(f"Customer: {cust_name} | Phone: {cust_phone} | Email: {cust_email}", flush=True)
+                                        print(f"Sentiment: {sentiment_txt} ({'👍 Liked' if sentiment_txt == 'Liked' else '👎 Disliked'}) | Rating: {rating_val}/5", flush=True)
+                                        print(f"Feedback Comment: \"{fb_record['comment']}\"", flush=True)
+                                        print("==================================================================\n", flush=True)
 
                                     if firebase_ready and db:
                                         db.collection("customers").document(cust_email).set({
