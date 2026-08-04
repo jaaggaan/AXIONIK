@@ -43,6 +43,38 @@ STORES: dict[str, dict[str, Any]] = {
 db: firestore.firestore.Client | None = None
 firebase_ready = False
 
+# ---------------------------------------------------------------------------
+# Supabase PostgreSQL Integration (Unlimited Free Cloud Database)
+# ---------------------------------------------------------------------------
+supabase_client = None
+supabase_ready = False
+
+try:
+    from supabase import create_client, Client
+    supa_url = os.environ.get("SUPABASE_URL", "")
+    supa_key = os.environ.get("SUPABASE_KEY", "")
+    
+    config_file = "supabase_config.json"
+    if not supa_url and os.path.isfile(config_file):
+        try:
+            import json
+            with open(config_file, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                supa_url = cfg.get("supabase_url", "")
+                supa_key = cfg.get("supabase_key", "")
+        except Exception as e:
+            logger.warning("Could not parse supabase_config.json: %s", e)
+
+    if supa_url and supa_key:
+        supabase_client: Client = create_client(supa_url, supa_key)
+        supabase_ready = True
+        logger.info("✅ Supabase client connected successfully! URL: %s", supa_url)
+    else:
+        logger.info("ℹ️ Supabase credentials not set. Using local high-speed in-memory database fallback.")
+except Exception as exc:
+    logger.warning("Supabase initialization deferred: %s", exc)
+
+
 # Local memory cache for database operations
 _customers_cache: dict[str, dict[str, Any]] = {}
 _visits_cache: list[dict[str, Any]] = []
