@@ -513,17 +513,78 @@ async def health_check() -> dict[str, Any]:
     }
 
 
+def verify_and_process_coupon(coupon_code: str, name: str, email: str, phone: str) -> dict[str, Any] | None:
+    clean_code = (coupon_code or "").replace(" ", "").upper()
+    if not clean_code:
+        return None
+
+    # Check Supabase coupons table or local cache to verify coupon existence
+    valid_coupon = None
+    if supabase_ready and supabase_client:
+        try:
+            res = supabase_client.table("coupons").select("*").eq("code", clean_code).execute()
+            if res and res.data and len(res.data) > 0:
+                valid_coupon = res.data[0]
+        except Exception as e:
+            logger.warning("Supabase coupon lookup error: %s", e)
+
+    if not valid_coupon:
+        for c in _coupons_cache:
+            if c.get("code", "").replace(" ", "").upper() == clean_code:
+                valid_coupon = c
+                break
+
+    if not valid_coupon:
+        logger.info("ℹ Coupon code '%s' not found in database — skipping redemption record", clean_code)
+        return None
+
+    # Verified coupon found! Record redemption
+    import uuid
+    red_id = f"RED-{uuid.uuid4().hex[:6].upper()}"
+    discount_val = float(valid_coupon.get("discount_value") or valid_coupon.get("discountValue") or 1000.0)
+    min_order_val = float(valid_coupon.get("min_order_value") or valid_coupon.get("minOrderValue") or 4999.0)
+    red_record = {
+        "id": red_id,
+        "couponCode": clean_code,
+        "customerName": name,
+        "customerEmail": email,
+        "customerPhone": phone,
+        "loyaltyTier": "Gold First Citizen",
+        "orderId": f"SS-ORD-{uuid.uuid4().hex[:5].upper()}",
+        "orderTotal": min_order_val,
+        "discountSaved": discount_val,
+        "redeemedAt": datetime.now(timezone.utc).isoformat(),
+        "storeLocation": "Mumbai - Malad West Flagship"
+    }
+
+    if not any(r.get("customerName") == name and r.get("couponCode") == clean_code for r in _redemptions_cache):
+        _redemptions_cache.insert(0, red_record)
+
+    supabase_save_redemption(red_record)
+
+    for c in _coupons_cache:
+        if c.get("code", "").replace(" ", "").upper() == clean_code:
+            c["usageCount"] = c.get("usageCount", 0) + 1
+            if "redemptions" not in c:
+                c["redemptions"] = []
+            if not any(r.get("customerName") == name for r in c["redemptions"]):
+                c["redemptions"].insert(0, red_record)
+
+    return red_record
+
+
 @app.post("/api/customers")
 async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
-    import uuid
     name = body.get("name") or body.get("username") or "Wi-Fi Guest"
     phone = body.get("phone") or body.get("phnumber") or "+91 98201 00000"
     email = body.get("email") or f"{phone}@ss-wifi.in"
-    coupon_code = (body.get("coupon") or body.get("couponCode") or body.get("sessionVoucherCode") or "").replace(" ", "").upper()
-    if not coupon_code:
-        coupon_code = "ENDOFSEASON50"
+    raw_coupon = (body.get("coupon") or body.get("couponCode") or body.get("sessionVoucherCode") or "").replace(" ", "").upper()
 
     user_id = f"cust_{str(phone).replace('+', '').replace(' ', '')}"
+
+    # Verify coupon dynamically against database
+    red_record = verify_and_process_coupon(raw_coupon, name, email, phone) if raw_coupon else None
+    assigned_coupon = raw_coupon if red_record else ""
 
     cust = db_get_customer(user_id)
     if not cust:
@@ -536,44 +597,18 @@ async def create_customer(body: dict[str, Any]) -> dict[str, Any]:
             "vip_tier": "Gold",
             "total_spend": 12500.0,
             "points": 1250,
+            "assigned_coupon": assigned_coupon,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     else:
         cust["name"] = name
         cust["email"] = email or cust.get("email", "")
+        if assigned_coupon:
+            cust["assigned_coupon"] = assigned_coupon
     
     db_save_customer(cust)
 
-    # Automatic Coupon Redemption on Customer Registration
-    red_id = f"RED-{uuid.uuid4().hex[:6].upper()}"
-    red_record = {
-        "id": red_id,
-        "couponCode": coupon_code,
-        "customerName": name,
-        "customerEmail": email,
-        "customerPhone": phone,
-        "loyaltyTier": "Gold First Citizen",
-        "orderId": f"SS-ORD-{uuid.uuid4().hex[:5].upper()}",
-        "orderTotal": 6500.0,
-        "discountSaved": 1000.0 if coupon_code == "BEAUTYBUY2" else 1500.0,
-        "redeemedAt": datetime.now().strftime("%Y-%m-%d %I:%M %p"),
-        "storeLocation": "Mumbai - Malad West Flagship"
-    }
-
-    if not any(r.get("customerName") == name and r.get("couponCode") == coupon_code for r in _redemptions_cache):
-        _redemptions_cache.insert(0, red_record)
-
-    supabase_save_redemption(red_record)
-
-    for c in _coupons_cache:
-        if c.get("code", "").replace(" ", "").upper() == coupon_code:
-            c["usageCount"] = c.get("usageCount", 0) + 1
-            if "redemptions" not in c:
-                c["redemptions"] = []
-            if not any(r.get("customerName") == name for r in c["redemptions"]):
-                c["redemptions"].insert(0, red_record)
-
-    logger.info("✓ Created live customer & redemption for %s: %s", name, coupon_code)
+    logger.info("✓ Processed customer check-in for %s (Coupon: %s)", name, assigned_coupon or "None")
     return {"success": True, "status": "ok", "customer": cust, "redemption": red_record}
 
 @app.get("/api/customers")
@@ -592,10 +627,12 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
     cust_name = body.name or body.username or "Wi-Fi Shopper"
     cust_phone = body.phone or body.phnumber or "+91 98201 00000"
     cust_email = body.email or f"shopper_{int(datetime.now().timestamp())}@shoppersstop.com"
-    coupon_code = (body.coupon or "").replace(" ", "").upper()
-    if not coupon_code:
-        coupon_code = "FIRSTCITIZEN15"
+    raw_coupon = (body.coupon or "").replace(" ", "").upper()
     feedback_text = (body.feedback or "").strip()
+
+    # Verify coupon dynamically against database
+    red_record = verify_and_process_coupon(raw_coupon, cust_name, cust_email, cust_phone) if raw_coupon else None
+    assigned_coupon = raw_coupon if red_record else ""
 
     user_id = f"cust_{cust_phone.replace('+', '').replace(' ', '')}"
 
@@ -605,6 +642,7 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
             **existing,
             "name": cust_name,
             "email": cust_email or existing.get("email", ""),
+            "assigned_coupon": assigned_coupon or existing.get("assigned_coupon", ""),
             "last_visit": now_str
         }
     else:
@@ -616,39 +654,12 @@ async def api_signin(body: SigninPayload) -> dict[str, Any]:
             "vip_tier": "Gold",
             "total_spend": 12500.0,
             "points": 1250,
+            "assigned_coupon": assigned_coupon,
             "created_at": now_str,
             "last_visit": now_str
         }
 
     db_save_customer(cust)
-
-    # Process Coupon Redemption if customer got/used a coupon
-    if coupon_code:
-        red_id = f"RED-{uuid.uuid4().hex[:6].upper()}"
-        red_record = {
-            "id": red_id,
-            "couponCode": coupon_code,
-            "customerName": cust_name,
-            "customerEmail": cust_email,
-            "customerPhone": cust_phone,
-            "loyaltyTier": "Gold First Citizen",
-            "orderId": f"SS-ORD-{uuid.uuid4().hex[:5].upper()}",
-            "orderTotal": 6500.0,
-            "discountSaved": 1000.0 if coupon_code == "BEAUTYBUY2" else 1500.0,
-            "redeemedAt": datetime.now(timezone.utc).isoformat(),
-            "storeLocation": "Mumbai - Malad West Flagship"
-        }
-        _redemptions_cache.insert(0, red_record)
-        print(f"[SIGNIN] Triggering Supabase redemption save for {cust_name} / {coupon_code}", flush=True)
-        supabase_save_redemption(red_record)
-        
-        # Increment usage on coupon cache
-        for c in _coupons_cache:
-            if c.get("code", "").replace(" ", "").upper() == coupon_code:
-                c["usageCount"] = c.get("usageCount", 0) + 1
-                if "redemptions" not in c:
-                    c["redemptions"] = []
-                c["redemptions"].insert(0, red_record)
 
     # Process Customer Feedback if provided via Captive Portal
     if feedback_text:
