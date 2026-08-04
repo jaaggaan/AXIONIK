@@ -13,9 +13,11 @@ CREATE TABLE IF NOT EXISTS customers (
     vip_tier TEXT DEFAULT 'Silver',
     total_spend NUMERIC DEFAULT 0.0,
     points INTEGER DEFAULT 500,
+    assigned_coupon TEXT DEFAULT '',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_visit TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS assigned_coupon TEXT DEFAULT '';
 
 -- 2. Coupons Table
 CREATE TABLE IF NOT EXISTS coupons (
@@ -31,8 +33,11 @@ CREATE TABLE IF NOT EXISTS coupons (
     status TEXT DEFAULT 'Active',
     start_date DATE,
     end_date DATE,
-    applicable_category TEXT
+    applicable_category TEXT,
+    redeemed_customers TEXT DEFAULT ''
 );
+-- IMPORTANT: Run this if the column was not created above
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS redeemed_customers TEXT DEFAULT '';
 
 -- 3. Redemptions Table
 CREATE TABLE IF NOT EXISTS redemptions (

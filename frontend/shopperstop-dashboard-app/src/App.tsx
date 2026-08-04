@@ -156,6 +156,30 @@ export default function App() {
                 if (!sc || !sc.code) return;
                 const cleanCode = sc.code.toString().replace(/\s+/g, '').toUpperCase();
                 const idx = merged.findIndex(pc => pc && pc.code && pc.code.toString().replace(/\s+/g, '').toUpperCase() === cleanCode);
+                // Merge server redemptions with any already in local state (dedup by id / orderId / customerName)
+                const serverReds: CouponRedemption[] = (sc.redemptions || []).map((r: any) => ({
+                  id: r.id || `RED-${Math.floor(Math.random() * 90000)}`,
+                  couponId: sc.id || '',
+                  couponCode: sc.code.toUpperCase(),
+                  customerName: r.customerName || 'Wi-Fi Shopper',
+                  customerEmail: r.customerEmail || '',
+                  customerPhone: r.customerPhone || '',
+                  loyaltyTier: r.loyaltyTier || 'Gold',
+                  orderId: r.orderId || `SS-ORD-${Math.floor(90000 + Math.random() * 9999)}`,
+                  orderTotal: Number(r.orderTotal || 0),
+                  discountSaved: Number(r.discountSaved || 0),
+                  redeemedAt: r.redeemedAt || 'Today',
+                  storeLocation: r.storeLocation || 'Mumbai - Malad West Flagship'
+                }));
+                const existingReds = idx !== -1 ? (merged[idx].redemptions || []) : [];
+                const mergedReds = [
+                  ...serverReds.filter(sr => !existingReds.some(er =>
+                    (er.id && sr.id && er.id === sr.id) ||
+                    (er.orderId && sr.orderId && er.orderId === sr.orderId) ||
+                    (er.customerName && sr.customerName && er.customerName.trim().toLowerCase() === sr.customerName.trim().toLowerCase())
+                  )),
+                  ...existingReds
+                ];
                 const formatted = {
                   id: sc.id || `CPN-${Date.now()}`,
                   code: sc.code.toUpperCase(),
@@ -163,16 +187,16 @@ export default function App() {
                   discountType: sc.discountType || 'Percentage',
                   discountValue: Number(sc.discountValue) || 10,
                   minOrderValue: Number(sc.minOrderValue) || 1999,
-                  usageCount: Math.max(sc.usageCount || 0, idx !== -1 ? merged[idx].usageCount : 0),
+                  usageCount: Math.max(sc.usageCount || 0, idx !== -1 ? merged[idx].usageCount : 0, mergedReds.length),
                   maxUsage: sc.maxUsage || 1000,
                   status: sc.status || 'Active',
                   startDate: sc.startDate || '2026-07-01',
                   endDate: sc.endDate || '2026-12-31',
                   applicableCategory: sc.applicableCategory || 'Site-wide',
-                  redemptions: idx !== -1 ? merged[idx].redemptions : (sc.redemptions || [])
+                  redemptions: mergedReds
                 };
                 if (idx !== -1) {
-                  merged[idx] = { ...merged[idx], ...formatted, redemptions: merged[idx].redemptions };
+                  merged[idx] = { ...merged[idx], ...formatted, redemptions: mergedReds };
                 } else {
                   merged.push(formatted);
                 }

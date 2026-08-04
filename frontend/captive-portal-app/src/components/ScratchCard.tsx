@@ -65,7 +65,7 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
     }
 
     // 2. Post to Telemetry Sync API (Port 5000)
-    fetch('http://localhost:63265/api/redemptions', {
+    fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/redemptions' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/redemptions')), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -151,7 +151,10 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
 
   useEffect(() => {
     initCanvas();
-  }, [initCanvas]);
+    if (assignedCoupon) {
+      broadcastRedemption(assignedCoupon);
+    }
+  }, [initCanvas, assignedCoupon, broadcastRedemption]);
 
   const scratch = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;

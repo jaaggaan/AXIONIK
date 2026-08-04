@@ -1,5 +1,28 @@
 import express from 'express';
 
+// ─── Supabase REST config (same project as Python backend) ───────────────────
+const SUPA_URL  = 'https://stnunolvbdvbhwolrnnd.supabase.co';
+const SUPA_KEY  = 'sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA';
+
+// Lightweight helper: query Supabase REST API (no SDK needed)
+async function supabaseFetch(table, params = '') {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.error(`[SUPABASE] fetch error for ${table}:`, e.message);
+    return [];
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const app = express();
 const PORT = 5000;
 
@@ -118,7 +141,8 @@ let STORED_COUPONS = [
     status: 'Active',
     startDate: '2026-07-01',
     endDate: '2026-08-31',
-    applicableCategory: 'Site-wide'
+    applicableCategory: 'Site-wide',
+    redemptions: []
   },
   {
     id: 'CPN-101',
@@ -133,7 +157,8 @@ let STORED_COUPONS = [
     status: 'Active',
     startDate: '2026-07-01',
     endDate: '2026-08-15',
-    applicableCategory: 'Ethnic & Womenswear'
+    applicableCategory: 'Ethnic & Womenswear',
+    redemptions: []
   },
   {
     id: 'CPN-102',
@@ -148,7 +173,8 @@ let STORED_COUPONS = [
     status: 'Active',
     startDate: '2026-01-01',
     endDate: '2026-12-31',
-    applicableCategory: 'Site-wide'
+    applicableCategory: 'Site-wide',
+    redemptions: []
   },
   {
     id: 'CPN-103',
@@ -163,9 +189,45 @@ let STORED_COUPONS = [
     status: 'Active',
     startDate: '2026-07-10',
     endDate: '2026-08-01',
-    applicableCategory: 'Beauty & Perfumes'
+    applicableCategory: 'Beauty & Perfumes',
+    redemptions: []
+  },
+  {
+    id: 'CPN-104',
+    code: 'ENDOFSEASON50',
+    title: 'End of Season Sale 50% OFF',
+    description: 'End of Season Sale - Scheduled clearance for select Menswear lines',
+    discountType: 'Percentage',
+    discountValue: 50,
+    minOrderValue: 9999,
+    usageCount: 312,
+    maxUsage: 2000,
+    status: 'Active',
+    startDate: '2026-07-01',
+    endDate: '2026-08-31',
+    applicableCategory: 'Menswear Clearance',
+    redemptions: []
   }
 ];
+
+// Helper: push a redemption entry into the matching coupon's redemptions[]
+function addRedemptionToCoupon(couponCode, redemption) {
+  const cleanCode = (couponCode || '').trim().toUpperCase();
+  const cpn = STORED_COUPONS.find(c => c.code.trim().toUpperCase() === cleanCode);
+  if (cpn) {
+    if (!cpn.redemptions) cpn.redemptions = [];
+    // Avoid exact duplicates (same id or same customer+coupon)
+    const isDupe = cpn.redemptions.some(r =>
+      (r.id && redemption.id && r.id === redemption.id) ||
+      (r.customerPhone && redemption.customerPhone && r.customerPhone === redemption.customerPhone &&
+       r.couponCode === redemption.couponCode && r.redeemedAt === redemption.redeemedAt)
+    );
+    if (!isDupe) {
+      cpn.redemptions.unshift(redemption);
+      cpn.usageCount = Math.max(cpn.usageCount, cpn.redemptions.length);
+    }
+  }
+}
 
 let STORED_ORDERS = [
   {
@@ -231,7 +293,7 @@ app.get('/api/customers', (req, res) => {
 
 // POST New Customer Sign-In (From Captive Portal or Site)
 app.post('/api/customers', (req, res) => {
-  const { name, phone, email } = req.body;
+  const { name, phone, email, coupon, couponCode, coupon_code, coupon_used } = req.body;
   if (!name) {
     return res.status(400).json({ success: false, message: 'Name is required' });
   }
@@ -239,6 +301,7 @@ app.post('/api/customers', (req, res) => {
   const cleanName = name.trim();
   const cleanPhone = phone ? (phone.startsWith('+91') ? phone : `+91 ${phone}`) : '+91 98765 43210';
   const cleanEmail = email ? email.trim() : `${phone || 'guest'}@ss-wifi.in`;
+  const usedCoupon = (coupon || couponCode || coupon_code || coupon_used || '').trim().toUpperCase();
 
   // Remove existing duplicate by name or phone if any
   STORED_CUSTOMERS = STORED_CUSTOMERS.filter(c => c.name.toLowerCase() !== cleanName.toLowerCase());
@@ -248,7 +311,7 @@ app.post('/api/customers', (req, res) => {
     name: cleanName,
     email: cleanEmail,
     phone: cleanPhone,
-    loyaltyTier: 'Black',
+    loyaltyTier: 'Gold',
     loyaltyPoints: 1250,
     totalSpent: 0,
     totalOrders: 0,
@@ -262,12 +325,77 @@ app.post('/api/customers', (req, res) => {
   STORED_CUSTOMERS.unshift(newCust);
   console.log(`[SYNC API] Added new customer: ${cleanName} (${cleanPhone})`);
 
+  // If a coupon code was provided, register a redemption entry under that coupon
+  if (usedCoupon) {
+    const redemption = {
+      id: `RED-${Date.now().toString().slice(-6)}`,
+      couponCode: usedCoupon,
+      customerName: cleanName,
+      customerEmail: cleanEmail,
+      customerPhone: cleanPhone,
+      loyaltyTier: 'Gold',
+      orderId: `SS-ORD-${Math.floor(98000 + Math.random() * 999)}`,
+      orderTotal: 0,
+      discountSaved: 0,
+      storeLocation: 'Mumbai - Malad West Flagship',
+      redeemedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    addRedemptionToCoupon(usedCoupon, redemption);
+    STORED_REDEMPTIONS.unshift(redemption);
+    console.log(`[SYNC API] Customer ${cleanName} linked to coupon: ${usedCoupon}`);
+  }
+
   res.json({ success: true, customer: newCust, customers: STORED_CUSTOMERS });
 });
 
-// GET All Coupons
-app.get('/api/coupons', (req, res) => {
-  res.json({ success: true, coupons: STORED_COUPONS });
+// GET All Coupons — merged with live Supabase redemptions
+app.get('/api/coupons', async (req, res) => {
+  try {
+    // Fetch all redemptions from Supabase in one call
+    const supaReds = await supabaseFetch('redemptions', 'select=*&order=redeemed_at.desc');
+
+    // Build a lookup: coupon_code -> redemption rows
+    const redsByCoupon = {};
+    for (const r of supaReds) {
+      const code = (r.coupon_code || '').trim().toUpperCase();
+      if (!code) continue;
+      if (!redsByCoupon[code]) redsByCoupon[code] = [];
+      redsByCoupon[code].push({
+        id:            r.id,
+        couponCode:    code,
+        customerName:  r.customer_name  || 'Wi-Fi Shopper',
+        customerEmail: r.customer_email || '',
+        customerPhone: r.customer_phone || '',
+        loyaltyTier:   r.loyalty_tier   || 'Gold First Citizen',
+        orderId:       r.order_id       || `SS-ORD-${Math.floor(98000 + Math.random() * 999)}`,
+        orderTotal:    Number(r.order_total   || 0),
+        discountSaved: Number(r.discount_saved || 0),
+        redeemedAt:    r.redeemed_at || 'Today',
+        storeLocation: r.store_location || 'Mumbai - Malad West Flagship'
+      });
+    }
+
+    // Merge into STORED_COUPONS
+    const merged = STORED_COUPONS.map(cpn => {
+      const code = (cpn.code || '').trim().toUpperCase();
+      // Live Supabase redemptions for this coupon
+      const liveReds = redsByCoupon[code] || [];
+      // Also keep any in-memory redemptions not yet in Supabase (dedup by id)
+      const liveIds = new Set(liveReds.map(r => r.id));
+      const memReds = (cpn.redemptions || []).filter(r => !liveIds.has(r.id));
+      const allReds = [...liveReds, ...memReds];
+      return {
+        ...cpn,
+        usageCount: Math.max(cpn.usageCount || 0, allReds.length),
+        redemptions: allReds
+      };
+    });
+
+    res.json({ success: true, coupons: merged });
+  } catch (e) {
+    console.error('[GET /api/coupons] error:', e.message);
+    res.json({ success: true, coupons: STORED_COUPONS });
+  }
 });
 
 // POST Create New Coupon (From Dashboard)
@@ -367,26 +495,25 @@ app.post('/api/orders', (req, res) => {
 
 // POST Coupon Redemption (From Captive Portal or Checkout)
 app.post('/api/redemptions', (req, res) => {
-  const { couponCode, customerName, customerEmail, customerPhone, orderId, orderTotal, discountSaved } = req.body;
+  const { couponCode, customerName, customerEmail, customerPhone, orderId, orderTotal, discountSaved, loyaltyTier, storeLocation } = req.body;
   const cleanCode = (couponCode || 'SHOPPERS500').trim().toUpperCase();
 
   const redemption = {
-    id: `RED-${Date.now().toString().slice(-4)}`,
+    id: `RED-${Date.now().toString().slice(-6)}`,
     couponCode: cleanCode,
     customerName: customerName || 'Wi-Fi Guest',
     customerEmail: customerEmail || 'guest@ss-wifi.in',
     customerPhone: customerPhone || '+91 98765 43210',
+    loyaltyTier: loyaltyTier || 'Gold',
     orderId: orderId || `SS-ORD-${Math.floor(98000 + Math.random() * 999)}`,
     orderTotal: orderTotal || 4999,
     discountSaved: discountSaved || 500,
+    storeLocation: storeLocation || 'Mumbai - Malad West Flagship',
     redeemedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   };
 
-  // Increment usage count in STORED_COUPONS
-  const targetCpn = STORED_COUPONS.find(c => c.code.toUpperCase() === cleanCode);
-  if (targetCpn) {
-    targetCpn.usageCount += 1;
-  }
+  // Push redemption into matching coupon's redemptions[] array
+  addRedemptionToCoupon(cleanCode, redemption);
 
   STORED_REDEMPTIONS.unshift(redemption);
   console.log(`[SYNC API] Coupon ${cleanCode} redeemed by: ${customerName} (Order Total: ₹${orderTotal || 0})`);
@@ -394,9 +521,41 @@ app.post('/api/redemptions', (req, res) => {
   res.json({ success: true, redemption, redemptions: STORED_REDEMPTIONS, coupons: STORED_COUPONS });
 });
 
-// GET All Redemptions
-app.get('/api/redemptions', (req, res) => {
-  res.json({ success: true, redemptions: STORED_REDEMPTIONS });
+// GET All Redemptions — merged with live Supabase data
+app.get('/api/redemptions', async (req, res) => {
+  try {
+    const supaReds = await supabaseFetch('redemptions', 'select=*&order=redeemed_at.desc');
+    const merged = [...STORED_REDEMPTIONS];
+    for (const r of supaReds) {
+      const sid = r.id;
+      const sCode = (r.coupon_code || '').trim().toUpperCase();
+      const sName = r.customer_name || '';
+      const alreadyIn = merged.some(m =>
+        m.id === sid ||
+        (m.customerName && m.customerName.toLowerCase() === sName.toLowerCase() &&
+         (m.couponCode || '').trim().toUpperCase() === sCode)
+      );
+      if (!alreadyIn) {
+        merged.unshift({
+          id:            sid,
+          couponCode:    sCode,
+          customerName:  sName || 'Wi-Fi Shopper',
+          customerEmail: r.customer_email || '',
+          customerPhone: r.customer_phone || '',
+          loyaltyTier:   r.loyalty_tier   || 'Gold First Citizen',
+          orderId:       r.order_id       || `SS-ORD-${Math.floor(98000 + Math.random() * 999)}`,
+          orderTotal:    Number(r.order_total   || 0),
+          discountSaved: Number(r.discount_saved || 0),
+          redeemedAt:    r.redeemed_at || 'Today',
+          storeLocation: r.store_location || 'Mumbai - Malad West Flagship'
+        });
+      }
+    }
+    res.json({ success: true, redemptions: merged });
+  } catch (e) {
+    console.error('[GET /api/redemptions] error:', e.message);
+    res.json({ success: true, redemptions: STORED_REDEMPTIONS });
+  }
 });
 
 app.listen(PORT, () => {

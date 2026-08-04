@@ -80,7 +80,6 @@ void handleRoot() {
 
 void forwardCheckinToBackend(String jsonBody) {
 #if defined(ESP32)
-  if (WiFi.status() != WL_CONNECTED) return;
   HTTPClient http;
   String url1 = "http://" + String(BACKEND_HOST) + ":" + String(BACKEND_PORT) + "/api/signin";
   http.begin(url1);

@@ -71,7 +71,11 @@ export const CouponsTab: React.FC<CouponsTabProps> = ({ coupons, onCreateCoupon 
     setIsModalOpen(false);
   };
 
-  const activeRedemptions = selectedCouponForRedemptions?.redemptions || [];
+  const activeCoupon = selectedCouponForRedemptions
+    ? (coupons.find((cpn) => cpn && cpn.code && cpn.code.replace(/\s+/g, '').toUpperCase() === selectedCouponForRedemptions.code.replace(/\s+/g, '').toUpperCase()) || selectedCouponForRedemptions)
+    : null;
+
+  const activeRedemptions = activeCoupon?.redemptions || [];
   const filteredRedemptions = activeRedemptions.filter((r) => {
     if (!r) return false;
     const q = (redemptionSearchTerm || '').toLowerCase();
