@@ -70,9 +70,10 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         couponCode: coupon.code,
-        customerName: customer.fullName || 'Wi-Fi Guest',
+        customerName: customer.fullName || customer.name || customer.username || 'Wi-Fi Guest',
         customerPhone: customer.phone || '9876543210',
-        customerEmail: customer.email || 'guest@ss-wifi.in'
+        customerEmail: customer.email || `${customer.phone || '9876543210'}@ss-wifi.in`,
+        storeLocation: 'Mumbai - Malad West Flagship'
       })
     }).catch(() => {});
 

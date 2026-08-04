@@ -608,8 +608,9 @@ def process_live_order(body: dict[str, Any]) -> dict[str, Any]:
         _redemptions_cache.insert(0, redemption_record)
         
         # Increment usage on coupon cache
+        clean_code = coupon_code.replace(" ", "").upper()
         for c in _coupons_cache:
-            if c.get("code", "").upper() == coupon_code:
+            if c.get("code", "").replace(" ", "").upper() == clean_code:
                 c["usageCount"] = c.get("usageCount", 0) + 1
                 if "redemptions" not in c:
                     c["redemptions"] = []
@@ -677,8 +678,9 @@ async def create_redemption(body: dict[str, Any]) -> dict[str, Any]:
     _redemptions_cache.insert(0, redemption_record)
 
     # Increment usage count on coupon
+    clean_code = coupon_code.replace(" ", "").upper()
     for c in _coupons_cache:
-        if c.get("code", "").upper() == coupon_code:
+        if c.get("code", "").replace(" ", "").upper() == clean_code:
             c["usageCount"] = c.get("usageCount", 0) + 1
             if "redemptions" not in c:
                 c["redemptions"] = []

@@ -92,16 +92,20 @@ export default function App() {
               if (!Array.isArray(prevCoupons)) return prevCoupons;
               return prevCoupons.map(cpn => {
                 if (!cpn || !cpn.code) return cpn;
-                const matched = redemptionsList.filter(r => r.couponCode && r.couponCode.toUpperCase() === cpn.code.toUpperCase());
+                const cleanCpnCode = cpn.code.replace(/\s+/g, '').toUpperCase();
+                const matched = redemptionsList.filter(r => {
+                  if (!r || !r.couponCode) return false;
+                  return r.couponCode.replace(/\s+/g, '').toUpperCase() === cleanCpnCode;
+                });
                 if (matched.length > 0) {
                   const formattedReds: CouponRedemption[] = matched.map(r => ({
                     id: r.id || `RED-${Math.floor(Math.random() * 90000)}`,
                     couponId: cpn.id,
                     couponCode: cpn.code,
-                    customerName: r.customerName || "Wi-Fi Shopper",
-                    customerEmail: r.customerEmail || "",
-                    customerPhone: r.customerPhone || "",
-                    loyaltyTier: "Black",
+                    customerName: r.customerName || r.name || "Wi-Fi Shopper",
+                    customerEmail: r.customerEmail || r.email || "",
+                    customerPhone: r.customerPhone || r.phone || "",
+                    loyaltyTier: r.loyaltyTier || "Black First Citizen",
                     orderId: r.orderId || `SS-ORD-${Math.floor(90000 + Math.random() * 9999)}`,
                     orderTotal: Number(r.orderTotal || cpn.minOrderValue + 500),
                     discountSaved: Number(r.discountSaved || cpn.discountValue),
@@ -111,7 +115,11 @@ export default function App() {
 
                   const existingReds = cpn.redemptions || [];
                   const mergedReds = [
-                    ...formattedReds.filter(fr => !existingReds.some(er => er.customerEmail && er.customerEmail.toLowerCase() === fr.customerEmail.toLowerCase())),
+                    ...formattedReds.filter(fr => !existingReds.some(er => 
+                      (er.id && fr.id && er.id === fr.id) ||
+                      (er.orderId && fr.orderId && er.orderId === fr.orderId) ||
+                      (er.customerName && fr.customerName && er.customerName.trim().toLowerCase() === fr.customerName.trim().toLowerCase())
+                    )),
                     ...existingReds
                   ];
                   return {
