@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client for Direct Cloud Database Sync -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     :root {
@@ -863,6 +865,89 @@
   <div class="toast-msg" id="toastMsg">Coupon Code Copied!</div>
 
   <script>
+    // ── SUPABASE DIRECT CLOUD CLIENT INITIALIZATION ──
+    const SUPABASE_PROJECT_URL = "https://juohiqxcfzququtuzxme.supabase.co";
+    const SUPABASE_PROJECT_KEY = "sb_publishable_GLqjcXd0gGy58SzO01eO0Q_Yu5_Tc-h";
+    let supabaseClient = null;
+
+    if (window.supabase) {
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PROJECT_KEY);
+        console.log("✅ Supabase Direct Cloud Client initialized successfully!");
+      } catch(err) {
+        console.warn("Supabase init error:", err);
+      }
+    }
+
+    // Direct Supabase Helper Functions
+    async function directSaveCustomer(cust) {
+      if(!supabaseClient) return;
+      try {
+        const payload = {
+          id: `cust_${cust.phone.replace(/[^0-9]/g, '') || Date.now()}`,
+          name: cust.name,
+          phone: cust.phone,
+          email: cust.email || "",
+          vip_tier: "Black Tier",
+          total_spend: cust.total_spend || 0,
+          assigned_coupon: cust.coupon || "FIRSTCITIZEN15",
+          created_at: new Date().toISOString()
+        };
+        await supabaseClient.from("customers").upsert(payload);
+        console.log("✓ Direct Supabase Saved Customer:", payload.name);
+      } catch(e) { console.error("Direct Supabase customer save failed:", e); }
+    }
+
+    async function directSaveOrder(order) {
+      if(!supabaseClient) return;
+      try {
+        // Ensure customer exists first for Foreign Key relationship
+        await directSaveCustomer({ name: order.customerName, phone: order.customerPhone, email: order.customerEmail, total_spend: order.totalAmount, coupon: order.couponCode });
+
+        const payload = {
+          id: order.id,
+          order_id: order.orderId,
+          customer_name: order.customerName,
+          customer_phone: order.customerPhone,
+          customer_email: order.customerEmail || "",
+          items: order.items,
+          total_amount: order.totalAmount,
+          coupon_code: order.couponCode || "",
+          discount_saved: order.discountSaved || 0,
+          payment_method: order.paymentMethod || "Razorpay Verified",
+          status: "CONFIRMED",
+          store_location: "Mumbai - Malad West Flagship",
+          channel: "Online E-Commerce",
+          order_date: new Date().toISOString()
+        };
+        await supabaseClient.from("orders").upsert(payload);
+        console.log("✓ Direct Supabase Saved Order:", payload.order_id);
+      } catch(e) { console.error("Direct Supabase order save failed:", e); }
+    }
+
+    async function directSaveRedemption(red) {
+      if(!supabaseClient) return;
+      try {
+        // Ensure customer exists first for Foreign Key relationship
+        await directSaveCustomer({ name: red.customerName, phone: red.customerPhone });
+
+        const payload = {
+          id: `RED-${Date.now()}`,
+          coupon_code: red.couponCode,
+          customer_name: red.customerName,
+          customer_phone: red.customerPhone,
+          order_id: red.orderId || null,
+          order_total: red.orderTotal || 0,
+          discount_saved: red.discountSaved || 0,
+          store_location: "Mumbai - Malad West Flagship",
+          channel: "Online E-Commerce",
+          redeemed_at: new Date().toISOString()
+        };
+        await supabaseClient.from("redemptions").upsert(payload);
+        console.log("✓ Direct Supabase Saved Redemption:", payload.coupon_code);
+      } catch(e) { console.error("Direct Supabase redemption save failed:", e); }
+    }
+
     // ── PRODUCTS DATA ──
     const ALL_PRODUCTS = [
       { id: 101, brand: 'KASHISH', title: 'Embroidered Chanderi Anarkali Kurta Set', price: 4199, origPrice: 6999, category: 'ethnic', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=533&fit=crop&auto=format', badge: '-40% OFF' },
@@ -1114,7 +1199,20 @@
       appliedCoupon = null;
       renderCartDrawer();
 
-      // Post order sync to Python backend & Supabase
+      // 1. Direct Supabase Cloud Save (No local server required!)
+      directSaveOrder(orderPayload);
+      if(orderPayload.couponCode) {
+        directSaveRedemption({
+          couponCode: orderPayload.couponCode,
+          customerName: orderPayload.customerName,
+          customerPhone: orderPayload.customerPhone,
+          discountSaved: orderPayload.discountSaved,
+          orderId: orderPayload.orderId,
+          orderTotal: orderPayload.totalAmount
+        });
+      }
+
+      // 2. Optional Local Backend Fallback Sync
       fetch('http://localhost:63265/api/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1126,22 +1224,6 @@
           coupon: orderPayload.couponCode || "ONLINE_PURCHASE"
         })
       }).catch(() => {});
-
-      if(orderPayload.couponCode) {
-        fetch('http://localhost:63265/api/redemptions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            couponCode: orderPayload.couponCode,
-            customerName: orderPayload.customerName,
-            customerPhone: orderPayload.customerPhone,
-            discountSaved: orderPayload.discountSaved,
-            orderId: orderPayload.orderId,
-            orderTotal: orderPayload.totalAmount,
-            storeLocation: "Mumbai - Malad West Flagship"
-          })
-        }).catch(() => {});
-      }
     }
 
     // ── PROMO CODE APPLY (REQUIRES SIGN IN) ──
@@ -1155,6 +1237,14 @@
       showToast(`🎁 Coupon "${code}" Applied Successfully!`);
       renderCartDrawer();
 
+      // Direct Supabase Cloud Save
+      directSaveRedemption({
+        couponCode: code,
+        customerName: currentUser.name,
+        customerPhone: currentUser.phone
+      });
+
+      // Optional Local Backend Sync
       fetch('http://localhost:63265/api/redemptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1190,6 +1280,10 @@
       closeModal('loginModal');
       showToast(`Welcome ${name}! Signed in successfully. Coupons unlocked!`);
 
+      // Direct Supabase Cloud Save
+      directSaveCustomer({ name, phone, email, coupon: "FIRSTCITIZEN15" });
+
+      // Optional Local Backend Sync
       fetch('http://localhost:63265/api/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
