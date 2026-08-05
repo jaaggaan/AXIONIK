@@ -631,6 +631,64 @@ app.get('/api/redemptions', async (req, res) => {
   }
 });
 
+let STORED_FEEDBACKS = [
+  {
+    id: 'FB-901',
+    customerName: 'Ananya Deshmukh',
+    customerPhone: '+91 98201 44321',
+    rating: 5,
+    sentiment: 'Positive',
+    comment: 'Exceptional shopping experience! The online catalog and fast checkout were seamless.',
+    date: '2026-08-04',
+    storeLocation: 'Online Store (eCom Direct)',
+    channel: 'Online E-Commerce'
+  }
+];
+
+// GET All Feedback (Merged with Supabase Cloud Project B)
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const supaFbs = await supabaseFetch('feedbacks', 'select=*&order=created_at.desc');
+    const liveFbs = supaFbs.map(f => ({
+      id: f.id || `FB-${Math.floor(100+Math.random()*900)}`,
+      customerName: f.customer_name || 'Shoppers Stop Guest',
+      customerPhone: f.customer_phone || '',
+      rating: Number(f.rating || 5),
+      sentiment: f.sentiment || (f.rating >= 4 ? 'Positive' : f.rating === 3 ? 'Neutral' : 'Negative'),
+      comment: f.comment || 'Great experience!',
+      date: f.created_at ? f.created_at.split('T')[0] : 'Today',
+      storeLocation: f.store_location || 'Online Store (eCom Direct)',
+      channel: f.channel || 'Online E-Commerce'
+    }));
+
+    const liveIds = new Set(liveFbs.map(f => f.id));
+    const memFbs = STORED_FEEDBACKS.filter(f => !liveIds.has(f.id));
+    res.json({ success: true, feedback: [...liveFbs, ...memFbs], feedbacks: [...liveFbs, ...memFbs] });
+  } catch (e) {
+    res.json({ success: true, feedback: STORED_FEEDBACKS, feedbacks: STORED_FEEDBACKS });
+  }
+});
+
+// POST New Feedback from Storefront or Kiosk
+app.post('/api/feedback', (req, res) => {
+  const { customerName, customerPhone, rating, comment, storeLocation, channel } = req.body || {};
+  const newFb = {
+    id: `FB-${Math.floor(1000 + Math.random() * 9000)}`,
+    customerName: customerName || 'Online Shopper',
+    customerPhone: customerPhone || '',
+    rating: Number(rating || 5),
+    sentiment: (Number(rating || 5) >= 4) ? 'Positive' : (Number(rating || 5) === 3) ? 'Neutral' : 'Negative',
+    comment: comment || 'Great overall online shopping experience!',
+    date: new Date().toISOString().split('T')[0],
+    storeLocation: storeLocation || 'Online Store (eCom Direct)',
+    channel: channel || 'Online E-Commerce'
+  };
+
+  STORED_FEEDBACKS.unshift(newFb);
+  console.log(`[SYNC API] Added new feedback from ${newFb.customerName}: ${newFb.rating} Stars ("${newFb.comment}")`);
+  res.json({ success: true, feedback: newFb, feedbacks: STORED_FEEDBACKS });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Telemetry, Coupon & Order Sync Server running on http://localhost:${PORT}`);
 });

@@ -130,17 +130,21 @@ export const CustomerFeedbackTab: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState('All Stores');
   const [ratingFilter, setRatingFilter] = useState<number | 'All'>('All');
 
-  // Fetch live feedbacks from backend API / Firebase
+  // Fetch live feedbacks from backend API / Supabase Cloud
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res = await fetch('http://localhost:63265/api/feedbacks');
-        if (res.ok) {
+        const res5k = await fetch('http://localhost:5000/api/feedback').catch(() => null);
+        const res63k = res5k && res5k.ok ? null : await fetch('http://localhost:63265/api/feedbacks').catch(() => null);
+        const res = res5k && res5k.ok ? res5k : res63k;
+
+        if (res && res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.feedbacks) && data.feedbacks.length > 0) {
+          const list = data.feedback || data.feedbacks;
+          if (data.success && Array.isArray(list) && list.length > 0) {
             setReviews(prev => {
               const merged = [...prev];
-              data.feedbacks.forEach((fb: any) => {
+              list.forEach((fb: any) => {
                 if (!merged.some(m => m.id === fb.id || (m.customerName === fb.customerName && m.comment === fb.comment))) {
                   merged.unshift({
                     id: fb.id || `REV-${Math.floor(Math.random() * 90000)}`,
@@ -148,14 +152,14 @@ export const CustomerFeedbackTab: React.FC = () => {
                     customerEmail: fb.customerEmail || fb.email || "shopper@ss.in",
                     customerPhone: fb.customerPhone || fb.phone || "+91 98201 00000",
                     loyaltyTier: fb.loyaltyTier || "Black",
-                    storeLocation: fb.storeLocation || "Mumbai - Malad West Flagship",
-                    category: fb.category || "Wi-Fi & Store Kiosk",
+                    storeLocation: fb.storeLocation || "Online Store (eCom Direct)",
+                    category: fb.category || "Online E-Commerce",
                     rating: Number(fb.rating || 5),
-                    title: fb.title || "Store Service Feedback",
+                    title: fb.title || "Online Order & Store Experience Feedback",
                     comment: fb.comment || fb.feedback || "Great shopping experience at Shoppers Stop!",
                     date: fb.date || new Date().toISOString().split('T')[0],
                     time: fb.time || new Date().toLocaleTimeString(),
-                    sentiment: fb.rating >= 4 ? "Delighted" : "Positive",
+                    sentiment: Number(fb.rating || 5) >= 4 ? "Delighted" : "Positive",
                     verifiedPurchase: true,
                     managerResponse: fb.managerResponse || null
                   });
