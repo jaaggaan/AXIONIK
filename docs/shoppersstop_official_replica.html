@@ -1215,7 +1215,13 @@
         });
       }
 
-      // 2. Optional Local Backend Fallback Sync
+      // 2. Local Backend Sync (Port 5000 React Dashboard + Port 63265 Python Backend)
+      fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      }).catch(() => {});
+
       fetch('http://localhost:63265/api/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

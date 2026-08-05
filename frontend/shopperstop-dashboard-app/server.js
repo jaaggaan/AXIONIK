@@ -538,14 +538,14 @@ app.post('/api/orders', (req, res) => {
     customerEmail: body.customerEmail || 'guest@ss-wifi.in',
     customerPhone: body.customerPhone || '+91 98765 43210',
     loyaltyTier: 'Black',
-    storeLocation: 'Mumbai - Malad West Flagship',
+    storeLocation: body.storeLocation || 'Online Store (eCom Direct)',
     date: formattedDate,
     time: formattedTime,
     items: formattedItems,
     totalAmount: body.pricing ? body.pricing.netPayable : (body.totalAmount || 2999),
     paymentMethod: body.paymentMethod === 'upi_qr' ? 'UPI QR Code' : (body.paymentMethod || 'Kiosk Express Pay'),
-    status: 'In-Store Kiosk',
-    shippingAddress: body.deliveryAddress || body.fittingRoomNo || body.pickupCounter || 'Store Pick-up Counter B',
+    status: body.status || 'CONFIRMED',
+    shippingAddress: body.deliveryAddress || body.fittingRoomNo || body.pickupCounter || 'Direct Online Delivery',
     trackingNumber: `AWB-SS-${Math.floor(100000 + Math.random() * 900000)}`
   };
 
@@ -553,11 +553,12 @@ app.post('/api/orders', (req, res) => {
   STORED_ORDERS.unshift(newOrder);
 
   // Update Customer order stats
-  const targetCust = STORED_CUSTOMERS.find(c => c.name.toLowerCase() === newOrder.customerName.toLowerCase());
+  const targetCust = STORED_CUSTOMERS.find(c => c.name.toLowerCase() === newOrder.customerName.toLowerCase() || c.phone === newOrder.customerPhone);
   if (targetCust) {
     targetCust.totalOrders += 1;
     targetCust.totalSpent += newOrder.totalAmount;
     targetCust.lastPurchaseDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
   }
 
   console.log(`[SYNC API] Order Recorded: ${newOrder.id} by ${newOrder.customerName} (₹${newOrder.totalAmount})`);

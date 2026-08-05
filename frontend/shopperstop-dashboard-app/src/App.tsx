@@ -40,12 +40,16 @@ export default function App() {
   
   // Safe Live API Sync Hook
   // Safe Live API Sync Hook
+  // Safe Live API Sync Hook
   useEffect(() => {
     let isMounted = true;
     const fetchLiveData = async () => {
+      // Fetch Live Customers
       try {
-        const res = await fetch("http://localhost:63265/api/customers");
-        if (res.ok) {
+        const res5k = await fetch("http://localhost:5000/api/customers").catch(() => null);
+        const res63k = res5k && res5k.ok ? null : await fetch("http://localhost:63265/api/customers").catch(() => null);
+        const res = res5k && res5k.ok ? res5k : res63k;
+        if (res && res.ok) {
           const data = await res.json();
           if (data && data.success && Array.isArray(data.customers) && isMounted) {
             const apiCusts: Customer[] = data.customers.map((c: any) => {
@@ -59,12 +63,12 @@ export default function App() {
                 loyaltyTier: (c.loyaltyTier || c.vip_tier || "Black First Citizen") as LoyaltyTier,
                 loyaltyPoints: typeof rawPoints === 'number' ? rawPoints : Number(rawPoints || 1250),
                 totalSpent: typeof rawSpend === 'number' ? rawSpend : Number(rawSpend || 125000),
-                totalOrders: Number(c.totalOrders || c.ordersCount || 10),
-                lastPurchaseDate: "2026-08-02",
-                preferredCategory: c.preferredCategory || "Luxury Watches & Accessories",
-                joinedDate: "2026-01-15",
+                totalOrders: Number(c.totalOrders || c.ordersCount || 1),
+                lastPurchaseDate: c.lastPurchaseDate || c.last_visit || "Today",
+                preferredCategory: c.preferredCategory || "Online E-Commerce",
+                joinedDate: c.joinedDate || "2026-01-15",
                 avatar: c.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150",
-                storeLocation: c.storeLocation || "Mumbai - Malad West Flagship"
+                storeLocation: c.storeLocation || "Online Store (eCom Direct)"
               };
             });
 
@@ -90,9 +94,50 @@ export default function App() {
         }
       } catch (e) {}
 
+      // Fetch Live Orders
       try {
-        const resR = await fetch("http://localhost:63265/api/redemptions");
-        if (resR.ok) {
+        const resO5k = await fetch("http://localhost:5000/api/orders").catch(() => null);
+        const resO63k = resO5k && resO5k.ok ? null : await fetch("http://localhost:63265/api/orders").catch(() => null);
+        const resO = resO5k && resO5k.ok ? resO5k : resO63k;
+        if (resO && resO.ok) {
+          const dataO = await resO.json();
+          if (dataO && dataO.success && Array.isArray(dataO.orders) && isMounted) {
+            const apiOrders: Order[] = dataO.orders.map((o: any) => ({
+              id: o.id || o.orderId || `ORD-${Math.floor(Math.random()*90000)}`,
+              orderId: o.orderId || o.id || `SS-ORD-${Math.floor(Math.random()*90000)}`,
+              customerName: o.customerName || "Shoppers Stop Guest",
+              customerPhone: o.customerPhone || "",
+              customerEmail: o.customerEmail || "",
+              items: Array.isArray(o.items) ? o.items : [{ title: "Online Purchase", qty: 1, price: Number(o.totalAmount || 0) }],
+              totalAmount: Number(o.totalAmount || o.orderTotal || 0),
+              couponCode: o.couponCode || "",
+              discountSaved: Number(o.discountSaved || 0),
+              paymentMethod: o.paymentMethod || "Razorpay Verified",
+              status: (o.status || "CONFIRMED") as OrderStatus,
+              storeLocation: o.storeLocation || "Online Store (eCom Direct)",
+              date: o.date || o.order_date || "Today"
+            }));
+
+            setOrders(prev => {
+              const merged = [...prev];
+              apiOrders.forEach(ao => {
+                const idx = merged.findIndex(m => m.orderId === ao.orderId || m.id === ao.id);
+                if (idx !== -1) {
+                  merged[idx] = { ...merged[idx], ...ao };
+                } else {
+                  merged.unshift(ao);
+                }
+              });
+              return merged;
+            });
+          }
+        }
+      } catch (e) {}
+
+      // Fetch Live Coupons
+      try {
+        const resR = await fetch("http://localhost:63265/api/redemptions").catch(() => null);
+        if (resR && resR.ok) {
           const dataR = await resR.json();
           if (dataR && dataR.success && Array.isArray(dataR.redemptions) && isMounted) {
             const redemptionsList: any[] = dataR.redemptions;
@@ -118,7 +163,7 @@ export default function App() {
                     orderTotal: Number(r.orderTotal || cpn.minOrderValue + 500),
                     discountSaved: Number(r.discountSaved || cpn.discountValue),
                     redeemedAt: r.redeemedAt || "Today",
-                    storeLocation: r.storeLocation || "Mumbai - Malad West Flagship"
+                    storeLocation: r.storeLocation || "Online Store (eCom Direct)"
                   }));
 
                   const existingReds = cpn.redemptions || [];
