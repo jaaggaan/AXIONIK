@@ -46,13 +46,20 @@ STORES: dict[str, dict[str, Any]] = {
 # ---------------------------------------------------------------------------
 # Supabase PostgreSQL Cloud Database Service
 # ---------------------------------------------------------------------------
-supabase_client: Any = None
+# Project A (In-Store Captive Portal Wi-Fi)
+SUPA_INSTORE_URL = "https://stnunolvbdvbhwolrnnd.supabase.co"
+SUPA_INSTORE_KEY = "sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA"
+
+# Project B (Online E-Commerce Storefront)
+SUPA_ONLINE_URL = "https://juohiqxcfzququtuzxme.supabase.co"
+SUPA_ONLINE_KEY = "sb_publishable_GLqjcXd0gGy58SzO01eO0Q_Yu5_Tc-h"
+
+supabase_instore_client: Any = None
+supabase_online_client: Any = None
 supabase_ready: bool = False
 
 try:
     from supabase import create_client
-    supa_url = "https://stnunolvbdvbhwolrnnd.supabase.co"
-    supa_key = "sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA"
     
     config_file = "supabase_config.json"
     if os.path.isfile(config_file):
@@ -61,22 +68,34 @@ try:
             with open(config_file, "r", encoding="utf-8") as f:
                 cfg = json.load(f)
                 if cfg.get("supabase_url"):
-                    supa_url = cfg["supabase_url"]
+                    SUPA_ONLINE_URL = cfg["supabase_url"]
                 if cfg.get("supabase_key"):
-                    supa_key = cfg["supabase_key"]
+                    SUPA_ONLINE_KEY = cfg["supabase_key"]
         except Exception as e:
             logger.warning("Could not parse supabase_config.json: %s", e)
 
-    if supa_url and supa_key:
-        supabase_client = create_client(supa_url, supa_key)
-        supabase_ready = True
-        logger.info("✅ Supabase Cloud Database connected successfully! URL: %s", supa_url)
+    try:
+        supabase_instore_client = create_client(SUPA_INSTORE_URL, SUPA_INSTORE_KEY)
+        logger.info("✅ Supabase In-Store Project A connected: %s", SUPA_INSTORE_URL)
+    except Exception as err_a:
+        logger.warning("Supabase Project A init error: %s", err_a)
+
+    try:
+        supabase_online_client = create_client(SUPA_ONLINE_URL, SUPA_ONLINE_KEY)
+        logger.info("✅ Supabase Online Project B connected: %s", SUPA_ONLINE_URL)
+    except Exception as err_b:
+        logger.warning("Supabase Project B init error: %s", err_b)
+
+    supabase_ready = bool(supabase_instore_client or supabase_online_client)
+    # Default fallback alias
+    supabase_client = supabase_online_client or supabase_instore_client
 except Exception as exc:
     logger.warning("Supabase initialization error: %s", exc)
 
 
+
 def supabase_save_customer(cust: dict[str, Any]) -> None:
-    if not (supabase_ready and supabase_client):
+    if not supabase_ready:
         return
     try:
         incoming_cpn = str(cust.get("coupon") or cust.get("couponCode") or cust.get("coupon_code") or cust.get("sessionVoucherCode") or cust.get("assigned_coupon") or "")
@@ -94,7 +113,12 @@ def supabase_save_customer(cust: dict[str, Any]) -> None:
             "created_at": str(cust.get("created_at") or datetime.now(timezone.utc).isoformat()),
             "last_visit": str(cust.get("last_visit") or datetime.now(timezone.utc).isoformat())
         }
-        supabase_client.table("customers").upsert(data).execute()
+        clients = [c for c in [supabase_online_client, supabase_instore_client] if c]
+        for client in clients:
+            try:
+                client.table("customers").upsert(data).execute()
+            except Exception as ex:
+                logger.warning("Single client customer save note: %s", ex)
         logger.info("✓ Saved customer %s (Assigned Coupon: %s) to Supabase!", data["name"], data["assigned_coupon"])
     except Exception as e:
         logger.error("Supabase customer save error: %s", e)
@@ -156,7 +180,7 @@ def supabase_list_coupons() -> list[dict[str, Any]]:
 
 
 def supabase_save_order(order: dict[str, Any]) -> None:
-    if not (supabase_ready and supabase_client):
+    if not supabase_ready:
         return
     try:
         data = {
@@ -172,16 +196,21 @@ def supabase_save_order(order: dict[str, Any]) -> None:
             "status": str(order.get("status") or "Completed"),
             "order_date": str(order.get("orderDate") or datetime.now(timezone.utc).isoformat()),
             "store_location": str(order.get("storeLocation") or "Mumbai - Malad West Flagship"),
-            "channel": str(order.get("channel") or "In-Store / WiFi")
+            "channel": str(order.get("channel") or "Online E-Commerce")
         }
-        supabase_client.table("orders").upsert(data).execute()
+        clients = [c for c in [supabase_online_client, supabase_instore_client] if c]
+        for client in clients:
+            try:
+                client.table("orders").upsert(data).execute()
+            except Exception as ex:
+                logger.warning("Single client order save note: %s", ex)
         logger.info("✓ Saved order %s to Supabase!", data["order_id"])
     except Exception as e:
         logger.error("Supabase order save error: %s", e)
 
 
 def supabase_save_redemption(red: dict[str, Any]) -> None:
-    if not (supabase_ready and supabase_client):
+    if not supabase_ready:
         logger.warning("⚠ Supabase not ready — skipping redemption save for %s", red.get("customerName"))
         return
     import traceback
@@ -199,9 +228,12 @@ def supabase_save_redemption(red: dict[str, Any]) -> None:
             "redeemed_at": datetime.now(timezone.utc).isoformat(),
             "store_location": str(red.get("storeLocation") or "Mumbai - Malad West Flagship")
         }
-        print(f"[SUPABASE] Saving redemption: {data['id']} | {data['customer_name']} | {data['coupon_code']}", flush=True)
-        res = supabase_client.table("redemptions").upsert(data).execute()
-        print(f"[SUPABASE] Redemption save result: {res.data}", flush=True)
+        clients = [c for c in [supabase_online_client, supabase_instore_client] if c]
+        for client in clients:
+            try:
+                client.table("redemptions").upsert(data).execute()
+            except Exception as ex:
+                logger.warning("Single client redemption save note: %s", ex)
         logger.info("✓ Saved redemption %s for %s (%s) to Supabase!", data["id"], data["customer_name"], data["coupon_code"])
 
         # Also update the coupons row: bump usage_count & append customer name

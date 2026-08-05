@@ -1,8 +1,8 @@
 import express from 'express';
 
 // ─── Supabase REST config (same project as Python backend) ───────────────────
-const SUPA_URL  = 'https://stnunolvbdvbhwolrnnd.supabase.co';
-const SUPA_KEY  = 'sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA';
+const SUPA_URL  = 'https://juohiqxcfzququtuzxme.supabase.co';
+const SUPA_KEY  = 'sb_publishable_GLqjcXd0gGy58SzO01eO0Q_Yu5_Tc-h';
 
 // Lightweight helper: query Supabase REST API (no SDK needed)
 async function supabaseFetch(table, params = '') {
@@ -301,7 +301,9 @@ app.post('/api/customers', (req, res) => {
   const cleanName = name.trim();
   const cleanPhone = phone ? (phone.startsWith('+91') ? phone : `+91 ${phone}`) : '+91 98201 00000';
   const cleanEmail = email ? email.trim() : `${phone || 'guest'}@ss-wifi.in`;
-  const usedCoupon = (coupon || couponCode || coupon_code || coupon_used || sessionVoucherCode || 'FESTIVE20').trim().toUpperCase();
+  const ACTIVE_COUPONS = ['FESTIVE20', 'FIRSTCITIZEN15', 'BEAUTYBUY2', 'ENDOFSEASON50'];
+  const randomCoupon = ACTIVE_COUPONS[Math.floor(Math.random() * ACTIVE_COUPONS.length)];
+  const usedCoupon = (coupon || couponCode || coupon_code || coupon_used || sessionVoucherCode || randomCoupon).trim().toUpperCase();
 
   // Remove existing duplicate by name or phone if any
   STORED_CUSTOMERS = STORED_CUSTOMERS.filter(c => c.name.toLowerCase() !== cleanName.toLowerCase());
