@@ -276,6 +276,18 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
+  // Dynamically calculate online sales and order totals
+  const onlineOrders = orders.filter(o => 
+    o.storeLocation === 'Online Store (eCom Direct)' || 
+    (o as any).channel === 'Online E-Commerce' || 
+    (o as any).channel === 'Online Storefront' ||
+    !o.storeLocation ||
+    o.storeLocation === 'Online Storefront'
+  );
+
+  const onlineSalesSum = onlineOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+  const allOrdersSalesSum = orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+
   const getStoreMetrics = (store: string) => {
     switch (store) {
       case 'Mumbai - Malad West Flagship':
@@ -289,10 +301,20 @@ export default function App() {
       case 'Hyderabad - Inorbit Mall Hitec City':
         return { sales: 460350, orders: 1210, returns: 111, custCount: 6 };
       case 'Online Store (eCom Direct)':
-        return { sales: 892100, orders: 2420, returns: 145, custCount: 9 };
+        return { 
+          sales: 871110 + onlineSalesSum, 
+          orders: 2420 + onlineOrders.length, 
+          returns: 145, 
+          custCount: customers.length 
+        };
       default:
         // 'All Stores (Nationwide)'
-        return { sales: 4892450, orders: 13100, returns: 866, custCount: customers.length };
+        return { 
+          sales: 4892450 + allOrdersSalesSum, 
+          orders: 13100 + orders.length, 
+          returns: 866, 
+          custCount: customers.length 
+        };
     }
   };
 
