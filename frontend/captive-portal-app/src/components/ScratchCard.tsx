@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Gift, Sparkles, CheckCircle2, Copy, Check, Ticket, ArrowRight } from 'lucide-react';
 import { CustomerInfo } from '../types';
 
@@ -47,10 +47,14 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
   const [scratchPercentage, setScratchPercentage] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  // Randomly select one of the exact 4 dashboard coupons
-  const [assignedCoupon] = useState(() => {
-    return DASHBOARD_COUPONS[Math.floor(Math.random() * DASHBOARD_COUPONS.length)];
-  });
+  // Dynamically derive assigned coupon matching customer.sessionVoucherCode
+  const assignedCoupon = useMemo(() => {
+    if (customer?.sessionVoucherCode) {
+      const match = DASHBOARD_COUPONS.find(c => c.code.toUpperCase() === customer.sessionVoucherCode.toUpperCase());
+      if (match) return match;
+    }
+    return DASHBOARD_COUPONS[0];
+  }, [customer?.sessionVoucherCode]);
 
   const broadcastRedemption = useCallback((coupon: typeof DASHBOARD_COUPONS[0]) => {
     // 1. Update customer object metadata
@@ -68,18 +72,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
     const custName = customer.fullName || customer.name || customer.username || 'Wi-Fi Guest';
     const custPhone = customer.phone || '9876543210';
     const custEmail = customer.email || `${custPhone}@ss-wifi.in`;
-
-    // Save customer + assigned_coupon in Supabase customers table
-    fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/customers' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/customers')), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: custName,
-        phone: custPhone,
-        email: custEmail,
-        coupon: coupon.code
-      })
-    }).catch(() => {});
 
     // Save redemption in Supabase redemptions & coupons table
     fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/redemptions' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/redemptions')), {

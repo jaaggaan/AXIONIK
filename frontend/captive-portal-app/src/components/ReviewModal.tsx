@@ -28,12 +28,50 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const handleSelectRating = (selected: 'UP' | 'DOWN') => {
     setRating(selected);
     if (!showCommentBox) {
-      submitAndClose();
+      submitAndClose(selected);
     }
   };
 
-  const submitAndClose = () => {
+  const submitAndClose = (selectedRating?: 'UP' | 'DOWN') => {
     setIsSubmitted(true);
+    const finalRating = selectedRating || rating;
+    const sentimentStr = finalRating === 'UP' ? 'Liked' : (finalRating === 'DOWN' ? 'Disliked' : 'Liked');
+    const numericRating = finalRating === 'UP' ? 5 : 1;
+    const finalComment = commentText.trim() || (sentimentStr === 'Liked' ? 'Liked the store & Wi-Fi experience' : 'Needs improvement in store service');
+
+    let cName = 'Wi-Fi Guest';
+    let cPhone = '+91 98201 00000';
+    let cEmail = 'guest@ss-wifi.in';
+
+    try {
+      const stored = localStorage.getItem('SS_STORED_CUSTOMERS');
+      if (stored) {
+        const arr = JSON.parse(stored);
+        if (Array.isArray(arr) && arr.length > 0) {
+          cName = arr[0].name || cName;
+          cPhone = arr[0].phone || cPhone;
+          cEmail = arr[0].email || cEmail;
+        }
+      }
+    } catch (e) {}
+
+    const payload = JSON.stringify({
+      name: cName,
+      phone: cPhone,
+      email: cEmail,
+      sentiment: sentimentStr,
+      rating: numericRating,
+      feedback: finalComment,
+      comment: finalComment
+    });
+
+    fetch('http://localhost:63265/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+    fetch('http://127.0.0.1:63265/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+    fetch('http://10.20.71.13:63265/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+    fetch('http://192.168.4.1/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+    fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+    fetch('/api/signin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
+
     try {
       sessionStorage.setItem('ss_portal_reviewed', 'true');
     } catch (e) {}

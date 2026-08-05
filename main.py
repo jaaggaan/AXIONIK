@@ -1199,6 +1199,60 @@ async def create_redemption(body: Any) -> dict[str, Any]:
     return {"success": True, "status": "ok", "redemption": redemption_record}
 
 
+@app.get("/api/feedback")
+@app.get("/api/feedbacks")
+async def get_feedbacks() -> dict[str, Any]:
+    live = supabase_list_feedbacks()
+    merged = list(_feedbacks_cache)
+    if live:
+        for f in live:
+            if not any(m.get("id") == f.get("id") for m in merged):
+                merged.insert(0, {
+                    "id": f.get("id") or f"FB-{uuid.uuid4().hex[:6].upper()}",
+                    "customerName": f.get("customer_name") or "Shoppers Stop Guest",
+                    "customerPhone": f.get("customer_phone") or "",
+                    "customerEmail": f.get("customer_email") or "",
+                    "rating": int(f.get("rating") or 5),
+                    "sentiment": f.get("sentiment") or ("Delighted" if int(f.get("rating") or 5) >= 4 else "Positive"),
+                    "comment": f.get("comment") or "Great experience!",
+                    "date": str(f.get("created_at", "")).split("T")[0] if f.get("created_at") else datetime.now().strftime("%Y-%m-%d"),
+                    "time": datetime.now().strftime("%I:%M %p"),
+                    "storeLocation": f.get("store_location") or "Online Store (eCom Direct)",
+                    "category": f.get("channel") or "Online E-Commerce",
+                    "verifiedPurchase": True
+                })
+    return {"success": True, "feedbacks": merged, "feedback": merged}
+
+
+@app.post("/api/feedback")
+async def post_feedback(body: dict[str, Any]) -> dict[str, Any]:
+    import uuid
+    fb_id = body.get("id") or f"FB-{uuid.uuid4().hex[:6].upper()}"
+    rating_val = int(body.get("rating") or 5)
+    sentiment_txt = body.get("sentiment") or ("Delighted" if rating_val >= 4 else ("Positive" if rating_val == 3 else "Needs Improvement"))
+    
+    fb_record = {
+        "id": fb_id,
+        "customerName": body.get("customerName") or body.get("name") or "Online Shopper",
+        "customerPhone": body.get("customerPhone") or body.get("phone") or "",
+        "customerEmail": body.get("customerEmail") or body.get("email") or "",
+        "loyaltyTier": "Gold First Citizen",
+        "storeLocation": body.get("storeLocation") or "Online Store (eCom Direct)",
+        "category": body.get("category") or "Online E-Commerce",
+        "rating": rating_val,
+        "title": "Online Experience Feedback",
+        "comment": str(body.get("comment") or body.get("feedback") or "Great shopping experience!"),
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "time": datetime.now().strftime("%I:%M %p"),
+        "sentiment": sentiment_txt,
+        "verifiedPurchase": True,
+        "helpfulCount": 1,
+        "managerResponse": ""
+    }
+    
+    _feedbacks_cache.insert(0, fb_record)
+    supabase_save_feedback(fb_record)
+    return {"success": True, "feedback": fb_record, "feedbacks": _feedbacks_cache}
 
 
 # ---------------------------------------------------------------------------

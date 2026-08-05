@@ -177,41 +177,46 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
     }
   };
 
-  const validate = () => {
+  // Form Validation
+  const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!phone.trim() || phone.trim().length < 10) {
-      newErrors.phone = 'Valid 10-digit mobile number required';
-    }
-
     if (activeTab === 'new') {
-      if (!fullName.trim()) {
-        newErrors.fullName = 'Full Name is required for First Citizen registration';
+      if (!fullName.trim()) newErrors.fullName = 'Full name is required';
+
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      if (!cleanPhone) {
+        newErrors.phone = 'Mobile number is required';
+      } else if (cleanPhone.length !== 10) {
+        newErrors.phone = 'Enter valid 10-digit mobile number';
       }
-      if (existingUserFound) {
-        newErrors.phone = 'Mobile number already registered. Please switch to Returning Member Login.';
+
+      if (email.trim() && !/\S+@\S+\.\S+/.test(email)) {
+        newErrors.email = 'Enter valid email address';
+      }
+    } else {
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      if (!cleanPhone) {
+        newErrors.phone = 'Mobile number is required';
       }
     }
 
-    if (activeTab === 'returning' && !recognizedMember) {
-      newErrors.phone = `Mobile number not found. Please switch to 'New Guest Access' tab to register.`;
+    if (!termsAccepted) {
+      newErrors.terms = 'Please accept Terms & Wi-Fi Access Policy';
     }
 
     if (!otpVerified) {
       newErrors.otp = 'Please enter SMS OTP (Demo OTP: 1234) to verify mobile number';
     }
 
-    if (!termsAccepted) {
-      newErrors.terms = 'Please accept the Wi-Fi terms & conditions';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Submit Handler -> Starts step animation and passes customer to parent
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validateForm()) return;
 
     setConnectingStep(1);
 
@@ -224,9 +229,9 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
     }, 1800);
 
     setTimeout(() => {
-      const cleanName = fullName.trim() || recognizedMember?.name || 'Wi-Fi Member';
-      const cleanPhone = phone.trim();
-      const cleanEmail = email.trim() || recognizedMember?.email || '';
+      const cleanName = fullName.trim() || 'Wi-Fi Guest';
+      const cleanPhone = phone.replace(/[^0-9]/g, '') || '9876543210';
+      const cleanEmail = email.trim();
       const formattedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       if (activeTab === 'returning') {
@@ -238,18 +243,18 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
           consentOffers,
           termsAccepted,
           connectedAt: formattedTime,
-          sessionVoucherCode: recognizedMember?.sessionVoucherCode || 'FESTIVE20',
+          sessionVoucherCode: recognizedMember?.sessionVoucherCode || assignedVoucherCode,
           sessionVoucherDiscount: '20% OFF',
           sessionVoucherDesc: 'Flat 20% off on all Ethnic & Designer Collections',
           sessionVoucherMinOrder: '₹4,999'
         };
 
-        const returningCoupon = returningCust.sessionVoucherCode || 'FESTIVE20';
-        fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/customers' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/customers')), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail, coupon: returningCoupon })
-        }).catch(() => {});
+        const returningCoupon = returningCust.sessionVoucherCode || assignedVoucherCode;
+        const postPayload = JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail, coupon: returningCoupon });
+
+        fetch('http://localhost:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
+        fetch('http://127.0.0.1:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
+        fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
 
         try {
           const eventPayload = {
@@ -270,8 +275,8 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
 
         onSuccessReturningUser(returningCust);
       } else {
-        // NEW GUEST ACCESS -> Advance to Scratch Card
-        const voucherCode = `FESTIVE20`;
+        // NEW GUEST ACCESS -> Advance to Scratch Card with assignedVoucherCode
+        const voucherCode = assignedVoucherCode;
         const newCustObj = {
           id: `CUST-${Math.floor(1000 + Math.random() * 9000)}`,
           name: cleanName,
@@ -287,11 +292,11 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
         };
 
-        fetch((window.location.hostname === 'localhost' ? 'http://localhost:63265/api/customers' : (window.location.protocol + '//' + window.location.hostname + ':63265/api/customers')), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail, coupon: voucherCode })
-        }).catch(() => {});
+        const postPayload = JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail, coupon: voucherCode });
+
+        fetch('http://localhost:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
+        fetch('http://127.0.0.1:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
+        fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
 
         try {
           const existingStr = localStorage.getItem('SS_STORED_CUSTOMERS');
@@ -413,6 +418,9 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                <input type="hidden" name="coupon" value={assignedVoucherCode} />
+                <input type="hidden" name="couponCode" value={assignedVoucherCode} />
+                <input type="hidden" name="sessionVoucherCode" value={assignedVoucherCode} />
                 {/* Recognized Returning Member Box */}
                 {activeTab === 'returning' && recognizedMember && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 font-semibold animate-fade-in">

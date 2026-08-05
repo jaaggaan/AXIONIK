@@ -13,10 +13,10 @@ export default function App() {
     consentOffers: true,
     termsAccepted: true,
     connectedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    sessionVoucherCode: 'FESTIVE20',
-    sessionVoucherDiscount: '20% OFF',
-    sessionVoucherDesc: 'Flat 20% off on all Ethnic & Designer Collections',
-    sessionVoucherMinOrder: '₹4,999'
+    sessionVoucherCode: '',
+    sessionVoucherDiscount: '',
+    sessionVoucherDesc: '',
+    sessionVoucherMinOrder: ''
   });
 
   const broadcastTelemetry = (type: string, payload: any) => {
