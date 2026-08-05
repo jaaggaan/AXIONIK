@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHOPPERS STOP — Retail Intelligence & Omnichannel Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    :root {
+      --ss-red: #d32f2f;
+      --ss-black: #0f172a;
+      --ss-dark-card: #1e293b;
+      --ss-border: #334155;
+      --ss-gold: #c59b27;
+      --ss-gold-light: #fef08a;
+      --ss-accent-blue: #38bdf8;
+      --ss-green: #22c55e;
+      --ss-font: 'Montserrat', -apple-system, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--ss-font); background: #090d16; color: #f8fafc; overflow-x: hidden; min-height: 100vh; }
+
+    /* HEADER */
+    header {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom: 1px solid var(--ss-border);
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+    }
+    .logo-area { display: flex; align-items: center; gap: 14px; }
+    .logo-title { font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #ffffff; }
+    .logo-title span { color: var(--ss-red); }
+    .logo-sub { font-size: 10px; color: #94a3b8; font-weight: 700; letter-spacing: 2px; }
+
+    .channel-switcher {
+      display: flex; background: #0f172a; border: 1px solid var(--ss-border); border-radius: 30px; padding: 4px; gap: 4px;
+    }
+    .switch-btn {
+      padding: 8px 18px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+      color: #94a3b8; transition: all 0.2s; cursor: pointer; border: none; background: transparent;
+    }
+    .switch-btn.active { background: var(--ss-red); color: #ffffff; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4); }
+
+    .status-badge {
+      display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--ss-green);
+      background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); padding: 6px 14px; border-radius: 20px;
+    }
+    .pulse-dot { width: 8px; height: 8px; background: var(--ss-green); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+    /* LAYOUT */
+    .dashboard-wrap { padding: 30px 36px; max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+    /* KPI CARDS */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .kpi-card {
+      background: var(--ss-dark-card); border: 1px solid var(--ss-border); border-radius: 12px; padding: 22px;
+      display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+    }
+    .kpi-card::before { content:''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--ss-red); }
+    .kpi-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+    .kpi-value { font-size: 32px; font-weight: 900; color: #ffffff; margin: 8px 0 4px; }
+    .kpi-sub { font-size: 11px; color: var(--ss-green); font-weight: 600; }
+
+    /* TABLES & PANELS GRID */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+
+    .panel-box {
+      background: var(--ss-dark-card); border: 1px solid var(--ss-border); border-radius: 12px; padding: 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ss-border); padding-bottom: 14px; }
+    .panel-title { font-size: 15px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+
+    /* DATA TABLE */
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12.5px; }
+    th { background: #0f172a; color: #94a3b8; font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; padding: 12px 14px; border-bottom: 1px solid var(--ss-border); }
+    td { padding: 14px; border-bottom: 1px solid #334155; color: #e2e8f0; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .pill-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+    .pill-green { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .pill-gold { background: rgba(197, 155, 39, 0.2); color: var(--ss-gold-light); border: 1px solid rgba(197, 155, 39, 0.4); }
+    .pill-blue { background: rgba(56, 189, 248, 0.2); color: var(--ss-accent-blue); border: 1px solid rgba(56, 189, 248, 0.4); }
+
+    /* COUPON CARDS */
+    .coupon-stat-list { display: flex; flex-direction: column; gap: 12px; }
+    .coupon-stat-card {
+      background: #0f172a; border: 1px dashed var(--ss-gold); border-radius: 8px; padding: 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .coupon-code { font-family: monospace; font-size: 14px; font-weight: 800; color: var(--ss-gold-light); }
+
+    /* FEEDBACK LIST */
+    .feedback-item { background: #0f172a; border: 1px solid var(--ss-border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .feedback-head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; }
+    .rating-stars { color: #f59e0b; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-area">
+      <div style="font-size:26px;">🛍️</div>
+      <div>
+        <div class="logo-title">SHOPPERS STOP<span>.</span> RETAIL INTEL</div>
+        <div class="logo-sub">OMNICHANNEL OPERATIONS & CLOUD DATABASE HUB</div>
+      </div>
+    </div>
+
+    <!-- CHANNEL MODE SWITCHER -->
+    <div class="channel-switcher">
+      <button class="switch-btn active" id="btnModeOnline" onclick="switchChannelMode('online')">🛍️ ONLINE E-COMMERCE (PROJ B)</button>
+      <button class="switch-btn" id="btnModeInstore" onclick="switchChannelMode('instore')">📶 IN-STORE WIFI (PROJ A)</button>
+      <button class="switch-btn" id="btnModeOmni" onclick="switchChannelMode('omni')">🌐 OMNICHANNEL UNIFIED</button>
+    </div>
+
+    <div class="status-badge">
+      <div class="pulse-dot"></div>
+      <span id="liveStatusText">LIVE SUPABASE CLOUD SYNC ACTIVE</span>
+    </div>
+  </header>
+
+  <!-- DASHBOARD CONTAINER -->
+  <div class="dashboard-wrap">
+    
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--ss-red: #38bdf8;">
+        <div class="kpi-label">Total Revenue (₹)</div>
+        <div class="kpi-value" id="kpiTotalRevenue">₹0</div>
+        <div class="kpi-sub">↑ Real-Time Payment Settlements</div>
+      </div>
+      <div class="kpi-card" style="--ss-red: #22c55e;">
+        <div class="kpi-label">Total Orders Placed</div>
+        <div class="kpi-value" id="kpiTotalOrders">0</div>
+        <div class="kpi-sub">Razorpay & Storefront Orders</div>
+      </div>
+      <div class="kpi-card" style="--ss-red: #c59b27;">
+        <div class="kpi-label">Total Coupons Redeemed</div>
+        <div class="kpi-value" id="kpiCouponsRedeemed">0</div>
+        <div class="kpi-sub">Member Savings Claimed</div>
+      </div>
+      <div class="kpi-card" style="--ss-red: #ec4899;">
+        <div class="kpi-label">Active Customers</div>
+        <div class="kpi-value" id="kpiActiveCustomers">0</div>
+        <div class="kpi-sub">Registered Shopper Profiles</div>
+      </div>
+    </div>
+
+    <!-- CONTENT GRID -->
+    <div class="content-grid">
+      
+      <!-- LEFT: ORDERS & CUSTOMER STREAM TABLE -->
+      <div class="panel-box">
+        <div class="panel-head">
+          <div class="panel-title">📦 Customer Orders & Transaction Stream</div>
+          <span style="font-size:11px; color:#94a3b8;" id="tableSubtitle">Showing Live Storefront Orders from Supabase Project B</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer Name</th>
+                <th>Mobile Number</th>
+                <th>Items Purchased</th>
+                <th>Coupon Used</th>
+                <th>Discount Saved</th>
+                <th>Amount Paid</th>
+                <th>Channel</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr>
+                <td colspan="8" style="text-align:center; padding:40px; color:#64748b;">Loading live orders from Supabase Cloud...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: COUPON PERFORMANCE & FEEDBACK STREAM -->
+      <div style="display:flex; flex-direction:column; gap:24px;">
+        
+        <!-- COUPON PERFORMANCE -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <div class="panel-title">🎁 Coupon Performance</div>
+          </div>
+          <div class="coupon-stat-list" id="couponStatsList">
+            <div style="color:#64748b; font-size:12px; text-align:center;">Loading coupons data...</div>
+          </div>
+        </div>
+
+        <!-- IN-STORE / ONLINE FEEDBACKS -->
+        <div class="panel-box">
+          <div class="panel-head">
+            <div class="panel-title">💬 Customer Ratings & Feedback</div>
+          </div>
+          <div id="feedbackStreamList" style="max-height: 320px; overflow-y: auto;">
+            <div style="color:#64748b; font-size:12px; text-align:center;">Loading customer feedback...</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ── SUPABASE DUAL CLOUD CLIENT CONFIGURATION ──
+    const SUPABASE_PROJECT_A_URL = "https://stnunolvbdvbhwolrnnd.supabase.co";
+    const SUPABASE_PROJECT_A_KEY = "sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA";
+
+    const SUPABASE_PROJECT_B_URL = "https://juohiqxcfzququtuzxme.supabase.co";
+    const SUPABASE_PROJECT_B_KEY = "sb_publishable_GLqjcXd0gGy58SzO01eO0Q_Yu5_Tc-h";
+
+    let supaA = null; // In-Store Wi-Fi
+    let supaB = null; // Online E-Commerce
+    let currentMode = 'online'; // 'online', 'instore', 'omni'
+
+    if(window.supabase) {
+      try {
+        supaA = window.supabase.createClient(SUPABASE_PROJECT_A_URL, SUPABASE_PROJECT_A_KEY);
+        supaB = window.supabase.createClient(SUPABASE_PROJECT_B_URL, SUPABASE_PROJECT_B_KEY);
+        console.log("✅ Dashboard Dual Supabase Clients Initialized!");
+      } catch(e) { console.error("Supabase init error:", e); }
+    }
+
+    // ── MODE SWITCHER ──
+    function switchChannelMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.switch-btn').forEach(b => b.classList.remove('active'));
+      if(mode === 'online') document.getElementById('btnModeOnline').classList.add('active');
+      else if(mode === 'instore') document.getElementById('btnModeInstore').classList.add('active');
+      else if(mode === 'omni') document.getElementById('btnModeOmni').classList.add('active');
+
+      document.getElementById('tableSubtitle').textContent = 
+        mode === 'online' ? "Showing Live Storefront Orders from Supabase Project B" :
+        mode === 'instore' ? "Showing Wi-Fi Check-ins & Feedbacks from Supabase Project A" :
+        "Showing Omnichannel Unified Data from both Project A & Project B";
+
+      fetchLiveDashboardData();
+    }
+
+    // ── FETCH LIVE DATA DIRECTLY FROM SUPABASE CLOUD ──
+    async function fetchLiveDashboardData() {
+      let orders = [];
+      let redemptions = [];
+      let customers = [];
+      let feedbacks = [];
+
+      try {
+        // Fetch Project B (Online Storefront)
+        if((currentMode === 'online' || currentMode === 'omni') && supaB) {
+          const resO = await supaB.from('orders').select('*').order('order_date', { ascending: false });
+          if(resO.data) orders = [...orders, ...resO.data];
+
+          const resR = await supaB.from('redemptions').select('*').order('redeemed_at', { ascending: false });
+          if(resR.data) redemptions = [...redemptions, ...resR.data];
+
+          const resC = await supaB.from('customers').select('*');
+          if(resC.data) customers = [...customers, ...resC.data];
+        }
+
+        // Fetch Project A (In-Store Captive Portal)
+        if((currentMode === 'instore' || currentMode === 'omni') && supaA) {
+          const resO = await supaA.from('orders').select('*');
+          if(resO.data) orders = [...orders, ...resO.data];
+
+          const resR = await supaA.from('redemptions').select('*');
+          if(resR.data) redemptions = [...redemptions, ...resR.data];
+
+          const resC = await supaA.from('customers').select('*');
+          if(resC.data) customers = [...customers, ...resC.data];
+
+          const resF = await supaA.from('feedbacks').select('*').order('created_at', { ascending: false });
+          if(resF.data) feedbacks = [...feedbacks, ...resF.data];
+        }
+      } catch(err) {
+        console.error("Dashboard cloud fetch error:", err);
+      }
+
+      // Render KPIs
+      const totalRev = orders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
+      document.getElementById('kpiTotalRevenue').textContent = `₹${totalRev.toLocaleString('en-IN')}`;
+      document.getElementById('kpiTotalOrders').textContent = orders.length;
+      document.getElementById('kpiCouponsRedeemed').textContent = redemptions.length;
+      document.getElementById('kpiActiveCustomers').textContent = customers.length;
+
+      // Render Orders Table
+      const tbody = document.getElementById('ordersTableBody');
+      if(orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:#64748b;">No ${currentMode} orders recorded yet in Supabase. Place an order on the Storefront HTML!</td></tr>`;
+      } else {
+        tbody.innerHTML = orders.map(o => {
+          let itemTitles = "Items";
+          try {
+            if(Array.isArray(o.items)) itemTitles = o.items.map(i => `${i.brand || ''} ${i.title} (x${i.qty||1})`).join(', ');
+            else if(typeof o.items === 'string') itemTitles = o.items;
+          } catch(e){}
+
+          return `
+            <tr>
+              <td style="font-family:monospace; font-weight:800; color:var(--ss-gold-light);">${o.order_id || o.id}</td>
+              <td><strong>${o.customer_name || 'Guest'}</strong></td>
+              <td style="color:#94a3b8;">${o.customer_phone || 'N/A'}</td>
+              <td style="max-width:260px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${itemTitles}</td>
+              <td>${o.coupon_code ? `<span class="pill-badge pill-gold">🎁 ${o.coupon_code}</span>` : `<span style="color:#64748b;">-</span>`}</td>
+              <td style="color:#4ade80; font-weight:700;">${o.discount_saved ? `-₹${parseFloat(o.discount_saved).toLocaleString('en-IN')}` : '₹0'}</td>
+              <td style="font-weight:900; color:#ffffff;">₹${(parseFloat(o.total_amount)||0).toLocaleString('en-IN')}</td>
+              <td><span class="pill-badge pill-blue">${o.channel || 'Online'}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Render Coupon Performance
+      const couponStats = {
+        'FESTIVE20': { count: 0, savings: 0 },
+        'FIRSTCITIZEN15': { count: 0, savings: 0 },
+        'BEAUTYBUY2': { count: 0, savings: 0 },
+        'ENDOFSEASON50': { count: 0, savings: 0 }
+      };
+
+      redemptions.forEach(r => {
+        const code = (r.coupon_code || '').toUpperCase();
+        if(couponStats[code]) {
+          couponStats[code].count += 1;
+          couponStats[code].savings += (parseFloat(r.discount_saved) || 0);
+        }
+      });
+
+      const couponListEl = document.getElementById('couponStatsList');
+      couponListEl.innerHTML = Object.keys(couponStats).map(c => `
+        <div class="coupon-stat-card">
+          <div>
+            <div class="coupon-code">${c}</div>
+            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Claimed: <strong>${couponStats[c].count} times</strong></div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13px; font-weight:800; color:#4ade80;">₹${couponStats[c].savings.toLocaleString('en-IN')}</div>
+            <div style="font-size:10px; color:#64748b;">Total Saved</div>
+          </div>
+        </div>
+      `).join('');
+
+      // Render Feedbacks
+      const fbContainer = document.getElementById('feedbackStreamList');
+      if(feedbacks.length === 0) {
+        fbContainer.innerHTML = `<div style="color:#64748b; font-size:12px; text-align:center; padding:20px;">No feedback entries yet</div>`;
+      } else {
+        fbContainer.innerHTML = feedbacks.map(f => `
+          <div class="feedback-item">
+            <div class="feedback-head">
+              <strong>${f.customer_name || 'Guest'} (${f.customer_phone || ''})</strong>
+              <span class="rating-stars">${'★'.repeat(f.rating || 5)}</span>
+            </div>
+            <div style="font-size:12px; color:#e2e8f0;">"${f.comment || 'Great experience at Shoppers Stop!'}"</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Initial Load & Auto-Refresh every 5 seconds
+    fetchLiveDashboardData();
+    setInterval(fetchLiveDashboardData, 5000);
+  </script>
+</body>
+</html>
