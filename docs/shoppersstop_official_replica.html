@@ -884,13 +884,15 @@
       if(!supabaseClient) return;
       try {
         const payload = {
-          id: `cust_${cust.phone.replace(/[^0-9]/g, '') || Date.now()}`,
+          id: `cust_${(cust.phone || '').replace(/[^0-9]/g, '') || Date.now()}`,
           name: cust.name,
           phone: cust.phone,
           email: cust.email || "",
           vip_tier: "Black Tier",
           total_spend: cust.total_spend || 0,
           assigned_coupon: cust.coupon || "FIRSTCITIZEN15",
+          store_location: "Online Store (eCom Direct)",
+          channel: "Online E-Commerce",
           created_at: new Date().toISOString()
         };
         await supabaseClient.from("customers").upsert(payload);
@@ -916,7 +918,7 @@
           discount_saved: order.discountSaved || 0,
           payment_method: order.paymentMethod || "Razorpay Verified",
           status: "CONFIRMED",
-          store_location: "Mumbai - Malad West Flagship",
+          store_location: "Online Store (eCom Direct)",
           channel: "Online E-Commerce",
           order_date: new Date().toISOString()
         };
@@ -939,7 +941,7 @@
           order_id: red.orderId || null,
           order_total: red.orderTotal || 0,
           discount_saved: red.discountSaved || 0,
-          store_location: "Mumbai - Malad West Flagship",
+          store_location: "Online Store (eCom Direct)",
           channel: "Online E-Commerce",
           redeemed_at: new Date().toISOString()
         };
@@ -1282,13 +1284,19 @@
       showToast(`Welcome ${name}! Signed in successfully. Coupons unlocked!`);
 
       // Direct Supabase Cloud Save
-      directSaveCustomer({ name, phone, email, coupon: "FIRSTCITIZEN15" });
+      directSaveCustomer({ name, phone, email, coupon: "FIRSTCITIZEN15", storeLocation: "Online Store (eCom Direct)" });
 
-      // Optional Local Backend Sync
+      // Local Backend Sync (Port 5000 React Dashboard + Port 63265 Python Backend)
+      fetch('http://localhost:5000/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, coupon: "FIRSTCITIZEN15", storeLocation: "Online Store (eCom Direct)", preferredCategory: "Online E-Commerce" })
+      }).catch(() => {});
+
       fetch('http://localhost:63265/api/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email, coupon: "FIRSTCITIZEN15" })
+        body: JSON.stringify({ name, phone, email, coupon: "FIRSTCITIZEN15", store_location: "Online Store (eCom Direct)" })
       }).catch(() => {});
 
       toggleCartDrawer(true);
