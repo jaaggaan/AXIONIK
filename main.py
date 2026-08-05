@@ -541,6 +541,15 @@ async def serve_dashboard():
             return HTMLResponse(content=f.read())
     return HTMLResponse("<h2>Shoppers Stop Executive Dashboard loading...</h2>")
 
+@app.get("/store", response_class=HTMLResponse)
+@app.get("/ecom", response_class=HTMLResponse)
+async def serve_ecom_store():
+    ecom_path = os.path.join(os.path.dirname(__file__), "docs", "shoppersstop_official_replica.html")
+    if os.path.exists(ecom_path):
+        with open(ecom_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h2>Shoppers Stop Online Store loading...</h2>")
+
 class SigninPayload(BaseModel):
     name: str | None = "Wi-Fi Shopper"
     username: str | None = None
