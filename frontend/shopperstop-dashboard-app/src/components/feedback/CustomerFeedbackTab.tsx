@@ -134,9 +134,9 @@ export const CustomerFeedbackTab: React.FC = () => {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
-        const res5k = await fetch('http://localhost:5000/api/feedback').catch(() => null);
-        const res63k = res5k && res5k.ok ? null : await fetch('http://localhost:63265/api/feedbacks').catch(() => null);
-        const res = res5k && res5k.ok ? res5k : res63k;
+        const res63k = (await fetch('http://localhost:63265/api/feedbacks').catch(() => null)) || (await fetch('/api/feedbacks').catch(() => null));
+        const res5k = res63k && res63k.ok ? null : await fetch('http://localhost:5000/api/feedback').catch(() => null);
+        const res = res63k && res63k.ok ? res63k : res5k;
 
         if (res && res.ok) {
           const data = await res.json();

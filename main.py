@@ -532,6 +532,15 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+@app.get("/", response_class=HTMLResponse)
+@app.get("/dashboard", response_class=HTMLResponse)
+async def serve_dashboard():
+    dashboard_path = os.path.join(os.path.dirname(__file__), "docs", "shopperstop_dashboard.html")
+    if os.path.exists(dashboard_path):
+        with open(dashboard_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h2>Shoppers Stop Executive Dashboard loading...</h2>")
+
 class SigninPayload(BaseModel):
     name: str | None = "Wi-Fi Shopper"
     username: str | None = None

@@ -46,9 +46,9 @@ export default function App() {
     const fetchLiveData = async () => {
       // Fetch Live Customers
       try {
-        const res5k = await fetch("http://localhost:5000/api/customers").catch(() => null);
-        const res63k = res5k && res5k.ok ? null : await fetch("http://localhost:63265/api/customers").catch(() => null);
-        const res = res5k && res5k.ok ? res5k : res63k;
+        const res63k = (await fetch("http://localhost:63265/api/customers").catch(() => null)) || (await fetch("/api/customers").catch(() => null));
+        const res5k = res63k && res63k.ok ? null : await fetch("http://localhost:5000/api/customers").catch(() => null);
+        const res = res63k && res63k.ok ? res63k : res5k;
         if (res && res.ok) {
           const data = await res.json();
           if (data && data.success && Array.isArray(data.customers) && isMounted) {
@@ -96,9 +96,9 @@ export default function App() {
 
       // Fetch Live Orders
       try {
-        const resO5k = await fetch("http://localhost:5000/api/orders").catch(() => null);
-        const resO63k = resO5k && resO5k.ok ? null : await fetch("http://localhost:63265/api/orders").catch(() => null);
-        const resO = resO5k && resO5k.ok ? resO5k : resO63k;
+        const resO63k = (await fetch("http://localhost:63265/api/orders").catch(() => null)) || (await fetch("/api/orders").catch(() => null));
+        const resO5k = resO63k && resO63k.ok ? null : await fetch("http://localhost:5000/api/orders").catch(() => null);
+        const resO = resO63k && resO63k.ok ? resO63k : resO5k;
         if (resO && resO.ok) {
           const dataO = await resO.json();
           if (dataO && dataO.success && Array.isArray(dataO.orders) && isMounted) {
