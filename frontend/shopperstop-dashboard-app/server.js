@@ -286,9 +286,32 @@ let STORED_ORDERS = [
 
 let STORED_REDEMPTIONS = [];
 
-// GET All Customers
-app.get('/api/customers', (req, res) => {
-  res.json({ success: true, customers: STORED_CUSTOMERS });
+// GET All Customers (Merged with live Supabase Cloud Project B)
+app.get('/api/customers', async (req, res) => {
+  try {
+    const supaCusts = await supabaseFetch('customers', 'select=*&order=created_at.desc');
+    const liveCusts = supaCusts.map(c => ({
+      id: c.id || `CUST-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: c.name || 'Shoppers Stop Guest',
+      email: c.email || '',
+      phone: c.phone || '',
+      loyaltyTier: c.vip_tier || 'Black',
+      loyaltyPoints: Number(c.points || 500),
+      totalSpent: Number(c.total_spend || 0),
+      totalOrders: 1,
+      lastPurchaseDate: c.last_visit ? c.last_visit.split('T')[0] : 'Today',
+      preferredCategory: 'Online E-Commerce',
+      storeLocation: 'Online Store (eCom Direct)',
+      joinedDate: c.created_at ? c.created_at.split('T')[0] : 'Today',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+    }));
+
+    const livePhones = new Set(liveCusts.map(c => c.phone));
+    const memCusts = STORED_CUSTOMERS.filter(c => !livePhones.has(c.phone));
+    res.json({ success: true, customers: [...liveCusts, ...memCusts] });
+  } catch (e) {
+    res.json({ success: true, customers: STORED_CUSTOMERS });
+  }
 });
 
 // POST New Customer Sign-In (From Captive Portal or Site)
@@ -318,7 +341,8 @@ app.post('/api/customers', (req, res) => {
     totalSpent: 0,
     totalOrders: 0,
     lastPurchaseDate: '2026-07-27',
-    preferredCategory: 'In-Store Guest Wi-Fi',
+    preferredCategory: 'Online E-Commerce',
+    storeLocation: 'Online Store (eCom Direct)',
     joinedDate: '2026-07-27',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
   };
@@ -433,9 +457,55 @@ app.post('/api/coupons', (req, res) => {
   res.json({ success: true, coupon: newCoupon, coupons: STORED_COUPONS });
 });
 
-// GET All Orders
-app.get('/api/orders', (req, res) => {
-  res.json({ success: true, orders: STORED_ORDERS });
+// GET All Orders (Merged with live Supabase Cloud Project B)
+app.get('/api/orders', async (req, res) => {
+  try {
+    const supaOrders = await supabaseFetch('orders', 'select=*&order=order_date.desc');
+    const liveOrders = supaOrders.map(o => {
+      let itemsList = [];
+      try {
+        if (Array.isArray(o.items)) itemsList = o.items;
+        else if (typeof o.items === 'string') itemsList = JSON.parse(o.items);
+      } catch (e) {
+        itemsList = [{ id: 'ITM-01', name: o.items || 'Storefront Items', sku: 'SS-ITEM', category: 'Online', quantity: 1, unitPrice: Number(o.total_amount || 0) }];
+      }
+
+      return {
+        id: o.order_id || o.id,
+        customerName: o.customer_name || 'Guest Shopper',
+        customerEmail: `${o.customer_phone || 'guest'}@ss-online.in`,
+        customerPhone: o.customer_phone || '',
+        loyaltyTier: 'Black',
+        storeLocation: 'Online Store (eCom Direct)',
+        date: o.order_date ? o.order_date.split('T')[0] : 'Today',
+        time: o.order_date ? new Date(o.order_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now',
+        items: itemsList.length > 0 ? itemsList.map(i => ({
+          id: i.id || `ITM-${Math.floor(100+Math.random()*900)}`,
+          name: i.title || i.name || 'Shoppers Stop Product',
+          sku: i.sku || `SS-${(i.brand || 'SS').toUpperCase()}-01`,
+          category: i.category || 'eCommerce',
+          quantity: Number(i.qty || i.quantity || 1),
+          unitPrice: Number(i.price || i.unitPrice || 0),
+          image: i.image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&q=80&w=200'
+        })) : [{
+          id: 'ITM-99', name: 'Shoppers Stop Fashion Apparel', sku: 'SS-FASHION-01', category: 'Apparel', quantity: 1, unitPrice: Number(o.total_amount || 0), image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&q=80&w=200'
+        }],
+        totalAmount: Number(o.total_amount || 0),
+        discountSaved: Number(o.discount_saved || 0),
+        couponCode: o.coupon_code || null,
+        paymentMethod: o.payment_method || 'Razorpay Online',
+        status: o.status || 'Delivered',
+        shippingAddress: 'Direct Online Delivery (Supabase Cloud Sync)',
+        trackingNumber: 'AWB-LIVE-SUPABASE'
+      };
+    });
+
+    const liveIds = new Set(liveOrders.map(o => o.id));
+    const memOrders = STORED_ORDERS.filter(o => !liveIds.has(o.id));
+    res.json({ success: true, orders: [...liveOrders, ...memOrders] });
+  } catch (e) {
+    res.json({ success: true, orders: STORED_ORDERS });
+  }
 });
 
 // POST New Order (From Kiosk/Shopping Site Checkout)

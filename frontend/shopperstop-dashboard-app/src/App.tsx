@@ -398,11 +398,15 @@ export default function App() {
           {(() => {
             const filteredOrders = selectedStore === 'All Stores (Nationwide)'
               ? orders
-              : orders.filter((o) => o.storeLocation === selectedStore || (selectedStore.includes('Mumbai') && (o.customerName === 'Ananya Deshmukh' || o.customerName === 'ricky' || o.customerName === 'JAGAN' || o.customerName === 'Mahima')));
+              : selectedStore === 'Online Store (eCom Direct)'
+              ? orders.filter((o) => o.storeLocation === 'Online Store (eCom Direct)' || (o as any).channel === 'Online E-Commerce' || !o.storeLocation)
+              : orders.filter((o) => o.storeLocation === selectedStore);
 
             const filteredCustomers = selectedStore === 'All Stores (Nationwide)'
               ? customers
-              : customers.filter((c) => (c as any).storeLocation === selectedStore || (! (c as any).storeLocation && selectedStore.includes('Mumbai')));
+              : selectedStore === 'Online Store (eCom Direct)'
+              ? customers.filter((c) => (c as any).storeLocation === 'Online Store (eCom Direct)' || (c as any).preferredCategory === 'Online E-Commerce' || !(c as any).storeLocation)
+              : customers.filter((c) => (c as any).storeLocation === selectedStore);
 
             return (
               <>
