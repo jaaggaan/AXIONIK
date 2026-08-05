@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shoppers Stop — Online Shopping for Clothing, Beauty, Accessories & Home</title>
+  <meta name="description" content="Shop online at Shoppers Stop for Men, Women & Kids fashion, luxury beauty, watches & home decor. Avail exclusive First Citizen discounts & coupons!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --ss-red: #d32f2f;
+      --ss-red-dark: #b71c1c;
+      --ss-black: #1a1a1a;
+      --ss-gray-dark: #333333;
+      --ss-gray: #666666;
+      --ss-gray-light: #f5f5f6;
+      --ss-border: #e0e0e0;
+      --ss-gold: #c59b27;
+      --ss-gold-light: #fdf8e6;
+      --rzp-blue: #0c2340;
+      --rzp-blue-light: #16365c;
+      --rzp-accent: #3395ff;
+      --ss-font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ss-font-serif: 'Playfair Display', Georgia, serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--ss-font-sans); color: var(--ss-black); background: #ffffff; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* ── TOP UTILITY HEADER ── */
+    .top-bar {
+      background: var(--ss-black);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 6px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      letter-spacing: 0.3px;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 20px; }
+    .top-bar-left span { color: var(--ss-gold); font-weight: 700; }
+    .pincode-picker { display: flex; align-items: center; gap: 6px; cursor: pointer; color: #dddddd; }
+    .pincode-picker:hover { color: #ffffff; }
+    .top-bar-right { display: flex; align-items: center; gap: 24px; }
+    .top-bar-right a { color: #cccccc; transition: color 0.2s; }
+    .top-bar-right a:hover { color: #ffffff; }
+
+    /* ── MAIN LOGO & SEARCH HEADER ── */
+    .main-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--ss-border);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .header-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 12px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+    }
+    .ss-logo-wrap { display: flex; flex-direction: column; }
+    .ss-logo {
+      font-family: var(--ss-font-sans);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: var(--ss-black);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .ss-logo span { color: var(--ss-red); }
+    .ss-sublogo {
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--ss-gray);
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    /* SEARCH BAR */
+    .search-container { flex: 1; max-width: 580px; position: relative; }
+    .search-box {
+      display: flex; align-items: center;
+      background: var(--ss-gray-light); border: 1px solid transparent; border-radius: 4px;
+      padding: 0 14px; height: 42px; transition: all 0.2s;
+    }
+    .search-box:focus-within { background: #ffffff; border-color: var(--ss-black); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+    .search-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 13px; font-weight: 500; color: var(--ss-black); padding: 0 10px; }
+    .search-box input::placeholder { color: #888888; }
+    .search-icon { color: #666666; font-size: 16px; }
+
+    /* HEADER ACTIONS */
+    .header-actions { display: flex; align-items: center; gap: 28px; }
+    .action-item {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 10.5px; font-weight: 600; color: var(--ss-gray-dark); position: relative; cursor: pointer;
+    }
+    .action-item:hover { color: var(--ss-red); }
+    .action-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .badge-count {
+      position: absolute; top: -5px; right: -2px;
+      background: var(--ss-red); color: #ffffff; font-size: 9px; font-weight: 800;
+      width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+
+    .first-citizen-pill {
+      background: linear-gradient(135deg, #111111 0%, #333333 100%);
+      border: 1px solid var(--ss-gold); color: var(--ss-gold);
+      padding: 7px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.2s;
+    }
+    .first-citizen-pill:hover { transform: scale(1.03); }
+
+    /* ── MEGA NAVIGATION BAR ── */
+    .nav-bar { background: #ffffff; border-bottom: 1px solid var(--ss-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .nav-container { max-width: 1440px; margin: 0 auto; padding: 0 40px; display: flex; align-items: center; gap: 32px; overflow-x: auto; scrollbar-width: none; }
+    .nav-container::-webkit-scrollbar { display: none; }
+    .nav-link { font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ss-black); padding: 14px 0; white-space: nowrap; position: relative; cursor: pointer; }
+    .nav-link:hover, .nav-link.active { color: var(--ss-red); }
+    .nav-link.active::after, .nav-link:hover::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--ss-red); }
+    .nav-link.sale-tag { color: var(--ss-red); font-weight: 800; }
+    .nav-link.luxury-tag { color: var(--ss-gold); }
+
+    /* ── HERO BANNER SLIDER ── */
+    .hero-slider { position: relative; background: #111111; height: 480px; overflow: hidden; }
+    .slider-track { display: flex; width: 300%; height: 100%; transition: transform 0.5s ease-in-out; }
+    .slide-item { width: 33.333%; height: 100%; position: relative; flex-shrink: 0; }
+    .slide-item img { width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0.88; }
+    .slide-caption { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 65%); display: flex; flex-direction: column; justify-content: center; padding: 0 80px; color: #ffffff; }
+    .slide-tag { background: var(--ss-red); color: #ffffff; font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; width: fit-content; margin-bottom: 14px; }
+    .slide-title { font-family: var(--ss-font-serif); font-size: 46px; font-weight: 700; line-height: 1.1; margin-bottom: 12px; max-width: 520px; }
+    .slide-subtitle { font-size: 15px; color: #dddddd; margin-bottom: 24px; max-width: 440px; font-weight: 400; }
+    .slide-btn { background: #ffffff; color: var(--ss-black); font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 13px 32px; border-radius: 2px; width: fit-content; transition: all 0.2s; }
+    .slide-btn:hover { background: var(--ss-red); color: #ffffff; }
+
+    .slider-arrows { position: absolute; top: 50%; transform: translateY(-50%); width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; }
+    .arrow-btn { pointer-events: auto; width: 44px; height: 44px; background: rgba(255,255,255,0.85); color: var(--ss-black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s; }
+    .arrow-btn:hover { background: var(--ss-red); color: #ffffff; }
+
+    .slider-dots { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; }
+    .dot.active { background: #ffffff; transform: scale(1.3); }
+
+    /* ── SECTION CONTAINERS ── */
+    .section-wrap { padding: 50px 40px; max-width: 1440px; margin: 0 auto; }
+    .section-head { text-align: center; margin-bottom: 36px; }
+    .section-head h2 { font-family: var(--ss-font-serif); font-size: 28px; font-weight: 700; color: var(--ss-black); letter-spacing: -0.5px; }
+    .section-head p { font-size: 13px; color: var(--ss-gray); margin-top: 6px; font-weight: 500; }
+
+    /* ── CIRCULAR CATEGORIES (SHOP BY CATEGORY) ── */
+    .categories-flex { display: grid; grid-template-columns: repeat(8, 1fr); gap: 20px; }
+    .cat-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; }
+    .cat-avatar { width: 110px; height: 110px; border-radius: 50%; overflow: hidden; border: 3px solid #f0f0f0; transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
+    .cat-item:hover .cat-avatar { border-color: var(--ss-red); transform: translateY(-4px); }
+    .cat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .cat-label { font-size: 12px; font-weight: 700; color: var(--ss-gray-dark); text-align: center; }
+
+    /* ── PROMOTIONAL DEALS BANNER GRID ── */
+    .promos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 20px; }
+    .promo-card { position: relative; border-radius: 8px; overflow: hidden; height: 280px; cursor: pointer; }
+    .promo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .promo-card:hover img { transform: scale(1.05); }
+    .promo-content { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 24px; color: #ffffff; }
+    .promo-subtitle { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--ss-gold-light); text-transform: uppercase; margin-bottom: 4px; }
+    .promo-title { font-family: var(--ss-font-serif); font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+    .promo-link { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; display: flex; align-items: center; gap: 6px; }
+
+    /* ── FILTERABLE PRODUCT CAROUSEL / GRID ── */
+    .filter-tabs { display: flex; justify-content: center; gap: 16px; margin-bottom: 32px; }
+    .tab-btn { padding: 8px 20px; border-radius: 20px; border: 1px solid var(--ss-border); font-size: 12px; font-weight: 600; color: var(--ss-gray); transition: all 0.2s; }
+    .tab-btn.active, .tab-btn:hover { background: var(--ss-black); color: #ffffff; border-color: var(--ss-black); }
+
+    .products-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; }
+    .product-card { background: #ffffff; border: 1px solid #eef0f2; border-radius: 8px; overflow: hidden; transition: all 0.3s; position: relative; display: flex; flex-direction: column; }
+    .product-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-color: transparent; transform: translateY(-4px); }
+    .prod-media { position: relative; width: 100%; padding-top: 133%; background: var(--ss-gray-light); overflow: hidden; cursor: pointer; }
+    .prod-media img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .product-card:hover .prod-media img { transform: scale(1.06); }
+    .discount-tag { position: absolute; top: 10px; left: 10px; background: var(--ss-red); color: #ffffff; font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 2px; }
+    .wishlist-btn { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.12); color: var(--ss-gray); transition: color 0.2s; }
+    .wishlist-btn:hover, .wishlist-btn.active { color: var(--ss-red); }
+
+    .prod-details { padding: 14px; display: flex; flex-direction: column; flex: 1; }
+    .prod-brand { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ss-black); margin-bottom: 4px; }
+    .prod-title { font-size: 12.5px; color: var(--ss-gray-dark); font-weight: 500; line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 35px; cursor: pointer; }
+    .prod-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; }
+    .price-final { font-size: 15px; font-weight: 800; color: var(--ss-black); }
+    .price-original { font-size: 12px; color: #999999; text-decoration: line-through; }
+    .price-off-perc { font-size: 11px; font-weight: 700; color: var(--ss-red); }
+
+    .add-to-bag-btn { margin-top: 12px; width: 100%; background: var(--ss-black); color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 9px; border-radius: 4px; transition: background 0.2s; }
+    .add-to-bag-btn:hover { background: var(--ss-red); }
+
+    /* ── FIRST CITIZEN LOYALTY CARD BANNER ── */
+    .loyalty-banner { background: linear-gradient(135deg, #111111 0%, #2b261b 100%); border-radius: 12px; padding: 40px; color: #ffffff; display: flex; align-items: center; justify-content: space-between; gap: 40px; margin: 40px 0; border: 1px solid var(--ss-gold); }
+    .loyalty-info { max-width: 600px; }
+    .loyalty-tag { color: var(--ss-gold); font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .loyalty-title { font-family: var(--ss-font-serif); font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+    .loyalty-desc { font-size: 13.5px; color: #cccccc; line-height: 1.6; margin-bottom: 24px; }
+    .loyalty-stats { display: flex; gap: 32px; }
+    .stat-box h4 { font-size: 22px; font-weight: 800; color: var(--ss-gold); }
+    .stat-box p { font-size: 11px; color: #aaaaaa; }
+    .loyalty-card-visual { width: 320px; height: 190px; background: linear-gradient(135deg, #c59b27 0%, #80610f 100%); border-radius: 12px; padding: 24px; box-shadow: 0 12px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; cursor: pointer; }
+
+    /* ── OFFICIAL BRAND SPOTLIGHT ── */
+    .brands-slider { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 32px; padding: 24px; background: var(--ss-gray-light); border-radius: 8px; }
+    .brand-item-name { font-family: var(--ss-font-serif); font-size: 20px; font-weight: 700; color: #777777; letter-spacing: 1px; transition: color 0.2s; }
+    .brand-item-name:hover { color: var(--ss-black); }
+
+    /* ── FOOTER ── */
+    footer { background: #111111; color: #aaaaaa; font-size: 12px; padding: 60px 40px 24px; }
+    .footer-container { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid #222222; }
+    .footer-col h4 { color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 18px; }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 10px; }
+    .footer-col a { color: #888888; transition: color 0.2s; }
+    .footer-col a:hover { color: #ffffff; }
+    .footer-bottom { max-width: 1440px; margin: 24px auto 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #666666; }
+
+    /* ── MODALS & OVERLAYS ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+      z-index: 10000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    
+    .modal-box {
+      background: #ffffff; border-radius: 12px; width: 90%; max-width: 520px;
+      padding: 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); position: relative;
+      transform: translateY(20px); transition: transform 0.3s;
+    }
+    .modal-overlay.active .modal-box { transform: translateY(0); }
+    .close-modal-btn { position: absolute; top: 16px; right: 16px; font-size: 20px; font-weight: 700; color: var(--ss-gray); }
+    .close-modal-btn:hover { color: var(--ss-black); }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--ss-black); margin-bottom: 6px; }
+    .form-group input, .form-group select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--ss-border); border-radius: 6px; font-size: 13px; outline: none; }
+    .form-group input:focus { border-color: var(--ss-black); }
+    .submit-form-btn { width: 100%; height: 46px; background: var(--ss-red); color: #ffffff; font-size: 13px; font-weight: 800; letter-spacing: 1px; border-radius: 6px; text-transform: uppercase; }
+    .submit-form-btn:hover { background: var(--ss-red-dark); }
+
+    /* ── CART SLIDE-OUT DRAWER ── */
+    .cart-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 440px; max-width: 100%;
+      background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.25); z-index: 10001;
+      transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex; flex-direction: column;
+    }
+    .cart-drawer.active { transform: translateX(0); }
+    .cart-head { padding: 20px 24px; border-bottom: 1px solid var(--ss-border); display: flex; align-items: center; justify-content: space-between; }
+    .cart-head h3 { font-size: 16px; font-weight: 800; }
+    .cart-body { flex: 1; overflow-y: auto; padding: 24px; }
+    .cart-item-row { display: flex; gap: 16px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #f0f0f0; }
+    .cart-item-img { width: 70px; height: 90px; border-radius: 4px; object-fit: cover; background: #eee; }
+    .cart-item-info { flex: 1; }
+    .cart-item-brand { font-size: 10px; font-weight: 800; color: var(--ss-gray); }
+    .cart-item-title { font-size: 12px; font-weight: 600; margin: 2px 0 6px; }
+    .cart-item-price { font-size: 14px; font-weight: 800; }
+    .cart-qty-ctrl { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .qty-btn { width: 24px; height: 24px; border: 1px solid var(--ss-border); border-radius: 4px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+    /* CART COUPONS SECTION (ONLY AFTER SIGN IN) */
+    .cart-coupon-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+    .cart-coupon-title { font-size: 12px; font-weight: 800; color: var(--ss-black); margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .coupon-item-pill {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #ffffff; border: 1px dashed var(--ss-gold); padding: 8px 12px;
+      border-radius: 6px; margin-bottom: 8px; font-size: 11px;
+    }
+    .coupon-code-txt { font-weight: 800; font-family: monospace; color: var(--ss-black); }
+    .coupon-apply-btn { background: var(--ss-black); color: #ffffff; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 4px; }
+    .coupon-apply-btn:hover { background: var(--ss-red); }
+
+    .locked-coupons-notice {
+      background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px;
+      padding: 12px; text-align: center; margin-top: 16px; font-size: 11.5px; color: #92400e;
+    }
+    .locked-coupons-notice button {
+      background: var(--ss-black); color: #ffffff; font-size: 10px; font-weight: 800;
+      padding: 5px 12px; border-radius: 4px; margin-top: 6px;
+    }
+
+    .cart-foot { padding: 24px; background: var(--ss-gray-light); border-top: 1px solid var(--ss-border); }
+    .summary-line { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+    .summary-line.total { font-size: 16px; font-weight: 800; color: var(--ss-black); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ss-border); }
+    .checkout-btn { width: 100%; height: 48px; background: var(--ss-red); color: #ffffff; font-size: 13px; font-weight: 800; letter-spacing: 1px; border-radius: 6px; text-transform: uppercase; margin-top: 16px; }
+    .checkout-btn:hover { background: var(--ss-red-dark); }
+
+    /* ── RAZORPAY-STYLE PAYMENT MODAL ── */
+    .rzp-modal {
+      width: 90%; max-width: 760px; background: #ffffff; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;
+    }
+    .rzp-header {
+      background: var(--rzp-blue); color: #ffffff; padding: 20px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .rzp-merchant-info h3 { font-size: 16px; font-weight: 800; color: #ffffff; }
+    .rzp-merchant-info p { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .rzp-amount-badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 6px; text-align: right; }
+    .rzp-amount-badge label { font-size: 10px; color: #94a3b8; display: block; text-transform: uppercase; }
+    .rzp-amount-badge span { font-size: 18px; font-weight: 800; color: #ffffff; }
+
+    .rzp-body { display: flex; min-height: 380px; }
+    .rzp-nav { width: 220px; background: #f8fafc; border-right: 1px solid #e2e8f0; padding: 12px 0; }
+    .rzp-nav-item {
+      padding: 14px 24px; font-size: 13px; font-weight: 600; color: #475569;
+      display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .rzp-nav-item.active { background: #ffffff; color: var(--rzp-accent); border-left: 4px solid var(--rzp-accent); font-weight: 700; }
+    .rzp-content { flex: 1; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; }
+
+    .qr-container { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    .qr-code-img { width: 170px; height: 170px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 8px; }
+
+    .rzp-pay-now-btn {
+      width: 100%; height: 48px; background: var(--rzp-accent); color: #ffffff;
+      font-size: 14px; font-weight: 800; border-radius: 6px; margin-top: 20px; transition: background 0.2s;
+    }
+    .rzp-pay-now-btn:hover { background: #1d72d6; }
+
+    /* ORDER CONFIRMATION MODAL */
+    .success-icon-wrap {
+      width: 64px; height: 64px; background: #dcfce7; color: #16a34a;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 32px; margin: 0 auto 16px;
+    }
+
+    /* TOAST */
+    .toast-msg {
+      position: fixed; bottom: 30px; right: 30px;
+      background: var(--ss-black); color: #ffffff; padding: 14px 24px;
+      border-radius: 6px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-left: 4px solid var(--ss-red);
+      transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 99999;
+    }
+    .toast-msg.active { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="pincode-picker" onclick="changePincode()">
+        📍 Express Delivery to: <strong id="currentPincode">400001 (Mumbai)</strong> ▾
+      </div>
+      <div>First Citizen Club: <span>Get Extra 15% Cashback</span></div>
+    </div>
+    <div class="top-bar-right">
+      <a href="#" onclick="showToast('Shoppers Stop Care: 1800-419-6648')">Customer Care</a>
+      <a href="#" onclick="showToast('Stores: Malad West Mumbai, Saket Delhi, Hitec City')">Find Stores</a>
+      <a href="#" onclick="openTrackModal()">Track Order</a>
+    </div>
+  </div>
+
+  <!-- MAIN HEADER -->
+  <header class="main-header">
+    <div class="header-container">
+      <a href="#" class="ss-logo-wrap">
+        <div class="ss-logo">SHOPPERS STOP<span>.</span></div>
+        <div class="ss-sublogo">START SOMETHING NEW</div>
+      </a>
+
+      <div class="search-container">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search for Brands, Products, Categories..." id="globalSearchInput" onkeyup="filterProductsBySearch(this.value)" />
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="action-item" onclick="openLoginModal()">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="userAccountLabel">Sign In</span>
+        </div>
+
+        <div class="action-item" onclick="openWishlistModal()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Wishlist
+          <span class="badge-count" id="wishlistBadge">0</span>
+        </div>
+
+        <div class="action-item" onclick="toggleCartDrawer(true)">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Bag
+          <span class="badge-count" id="cartBadgeCount">0</span>
+        </div>
+
+        <div class="first-citizen-pill" onclick="openLoginModal()">
+          👑 FIRST CITIZEN
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="nav-bar">
+    <div class="nav-container">
+      <div class="nav-link sale-tag" onclick="filterCategory('SALE')">🔥 SALE</div>
+      <div class="nav-link active" onclick="filterCategory('WOMEN')">WOMEN</div>
+      <div class="nav-link" onclick="filterCategory('MEN')">MEN</div>
+      <div class="nav-link" onclick="filterCategory('BEAUTY')">BEAUTY</div>
+      <div class="nav-link luxury-tag" onclick="filterCategory('LUXURY')">LUXURY</div>
+      <div class="nav-link" onclick="filterCategory('KIDS')">KIDS</div>
+      <div class="nav-link" onclick="filterCategory('HOMES')">HOMES</div>
+      <div class="nav-link" onclick="filterCategory('WATCHES')">WATCHES</div>
+      <div class="nav-link" onclick="filterCategory('FOOTWEAR')">FOOTWEAR</div>
+      <div class="nav-link" onclick="filterCategory('BRANDS')">BRANDS</div>
+      <div class="nav-link" onclick="filterCategory('GIFTS')">GIFTS</div>
+    </div>
+  </nav>
+
+  <!-- HERO CAROUSEL -->
+  <div class="hero-slider">
+    <div class="slider-track" id="sliderTrack">
+      <!-- Slide 1 -->
+      <div class="slide-item">
+        <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&h=600&fit=crop&auto=format" alt="Beauty Festival" />
+        <div class="slide-caption">
+          <span class="slide-tag">EXCLUSIVE FESTIVAL</span>
+          <h1 class="slide-title">The Great Beauty Carnival</h1>
+          <p class="slide-subtitle">Upto 40% OFF on Estée Lauder, MAC, Clinique, Bobbi Brown & Fragrances.</p>
+          <button class="slide-btn" onclick="scrollToSection('products')">EXPLORE BEAUTY</button>
+        </div>
+      </div>
+      <!-- Slide 2 -->
+      <div class="slide-item">
+        <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&h=600&fit=crop&auto=format" alt="Ethnic Grandeur" />
+        <div class="slide-caption">
+          <span class="slide-tag">KASHISH COLLECTION</span>
+          <h1 class="slide-title">Royal Ethnic Elegance</h1>
+          <p class="slide-subtitle">Designer Silk Sarees, Embroidered Lehengas & Festive Anarkali Sets.</p>
+          <button class="slide-btn" onclick="scrollToSection('products')">SHOP ETHNIC</button>
+        </div>
+      </div>
+      <!-- Slide 3 -->
+      <div class="slide-item">
+        <img src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&h=600&fit=crop&auto=format" alt="Men's Fashion" />
+        <div class="slide-caption">
+          <span class="slide-tag">END OF SEASON SALE</span>
+          <h1 class="slide-title">Flat 50% OFF On Men's</h1>
+          <p class="slide-subtitle">Suits, Blazers, Casual Shirts & Footwear from Tommy Hilfiger & CK.</p>
+          <button class="slide-btn" onclick="scrollToSection('products')">SHOP MEN</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-arrows">
+      <button class="arrow-btn" onclick="prevSlide()">❮</button>
+      <button class="arrow-btn" onclick="nextSlide()">❯</button>
+    </div>
+
+    <div class="slider-dots">
+      <div class="dot active" onclick="setSlide(0)"></div>
+      <div class="dot" onclick="setSlide(1)"></div>
+      <div class="dot" onclick="setSlide(2)"></div>
+    </div>
+  </div>
+
+  <!-- SHOP BY CATEGORY -->
+  <section class="section-wrap">
+    <div class="section-head">
+      <h2>Shop By Category</h2>
+      <p>Handpicked style collections for every wardrobe & home</p>
+    </div>
+
+    <div class="categories-flex">
+      <div class="cat-item" onclick="filterCategory('Ethnic')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=200&h=200&fit=crop&auto=format" alt="Ethnic Wear" /></div>
+        <div class="cat-label">Women's Ethnic</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Western')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=200&h=200&fit=crop&auto=format" alt="Western Wear" /></div>
+        <div class="cat-label">Westernwear</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Men')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=200&h=200&fit=crop&auto=format" alt="Men's Casual" /></div>
+        <div class="cat-label">Men's Fashion</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Beauty')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=200&h=200&fit=crop&auto=format" alt="Luxury Beauty" /></div>
+        <div class="cat-label">Beauty & Makeup</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Bags')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=200&h=200&fit=crop&auto=format" alt="Handbags" /></div>
+        <div class="cat-label">Bags & Wallets</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Watches')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200&h=200&fit=crop&auto=format" alt="Watches" /></div>
+        <div class="cat-label">Watches & Tech</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Kids')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=200&h=200&fit=crop&auto=format" alt="Kids Wear" /></div>
+        <div class="cat-label">Kids' Collection</div>
+      </div>
+      <div class="cat-item" onclick="filterCategory('Home')">
+        <div class="cat-avatar"><img src="https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=200&h=200&fit=crop&auto=format" alt="Home Decor" /></div>
+        <div class="cat-label">Home & Living</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROMOTIONAL DEALS BANNER GRID -->
+  <section class="section-wrap" style="padding-top:0;">
+    <div class="promos-grid">
+      <div class="promo-card" onclick="filterCategory('Ethnic')">
+        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop&auto=format" alt="Ethnic Sarees" />
+        <div class="promo-content">
+          <div class="promo-subtitle">HERITAGE SILKS</div>
+          <div class="promo-title">Banarasi & Kanjeevaram Sarees</div>
+          <div class="promo-link">SHOP NOW ➔</div>
+        </div>
+      </div>
+
+      <div class="promo-card" onclick="filterCategory('Men')">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=400&fit=crop&auto=format" alt="Men's Suits" />
+        <div class="promo-content">
+          <div class="promo-subtitle">SUIT UP IN STYLE</div>
+          <div class="promo-title">Premium Formal Suits & Shirts</div>
+          <div class="promo-link">EXPLORE COLLECTION ➔</div>
+        </div>
+      </div>
+
+      <div class="promo-card" onclick="filterCategory('Beauty')">
+        <img src="https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=600&h=400&fit=crop&auto=format" alt="Perfumes" />
+        <div class="promo-content">
+          <div class="promo-subtitle">LUXURY SCENTS</div>
+          <div class="promo-title">Designer Fragrance Festival</div>
+          <div class="promo-link">SHOP BEAUTY ➔</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRENDING PRODUCTS SHOWCASE -->
+  <section class="section-wrap" id="products" style="background: #fafafa; border-top: 1px solid #eeeeee; border-bottom: 1px solid #eeeeee;">
+    <div class="section-head">
+      <h2>Trending Right Now</h2>
+      <p>Bestsellers loved by over 5 million First Citizen shoppers</p>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button class="tab-btn active" onclick="filterProductTab('all', this)">All Items</button>
+      <button class="tab-btn" onclick="filterProductTab('ethnic', this)">Women Ethnic</button>
+      <button class="tab-btn" onclick="filterProductTab('men', this)">Men's Apparel</button>
+      <button class="tab-btn" onclick="filterProductTab('beauty', this)">Beauty & Perfumes</button>
+      <button class="tab-btn" onclick="filterProductTab('watches', this)">Luxury Watches</button>
+    </div>
+
+    <div class="products-grid" id="productsContainer">
+      <!-- Products generated dynamically by JS -->
+    </div>
+  </section>
+
+  <!-- FIRST CITIZEN CLUB LOYALTY CARD -->
+  <section class="section-wrap">
+    <div class="loyalty-banner">
+      <div class="loyalty-info">
+        <div class="loyalty-tag">FIRST CITIZEN CLUB</div>
+        <h2 class="loyalty-title">Earn Rewards Every Time You Shop</h2>
+        <p class="loyalty-desc">Unlock instant cashback, personalized styling consultations, free home delivery, and VIP invitations to exclusive previews at all Shoppers Stop outlets nationwide.</p>
+        <div class="loyalty-stats">
+          <div class="stat-box">
+            <h4>5 Million+</h4>
+            <p>Active Members</p>
+          </div>
+          <div class="stat-box">
+            <h4>15% Extra</h4>
+            <p>Reward Points</p>
+          </div>
+          <div class="stat-box">
+            <h4>Free</h4>
+            <p>Alteration Service</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="loyalty-card-visual" onclick="openLoginModal()">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-family:var(--ss-font-serif); font-weight:800; font-size:16px; color:#fff;">FIRST CITIZEN</div>
+          <div style="font-size:10px; font-weight:800; color:var(--ss-gold-light);">BLACK TIER</div>
+        </div>
+        <div style="font-family:monospace; font-size:16px; letter-spacing:2px; color:#fff;">9820 1000 4829</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <div>
+            <div style="font-size:8px; color:#ddd;">MEMBER NAME</div>
+            <div style="font-size:12px; font-weight:700; color:#fff;" id="loyaltyMemberName">PLEASE SIGN IN</div>
+          </div>
+          <div style="font-size:12px; font-weight:800; color:var(--ss-gold-light);">SHOPPERS STOP</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OFFICIAL BRAND PARTNERS -->
+  <section class="section-wrap" style="padding-top:0;">
+    <div class="section-head">
+      <h2>Featured Brand Houses</h2>
+      <p>Authentic products straight from worldwide iconic fashion houses</p>
+    </div>
+    <div class="brands-slider">
+      <div class="brand-item-name">KASHISH</div>
+      <div class="brand-item-name">HAUTE CURRY</div>
+      <div class="brand-item-name">TOMMY HILFIGER</div>
+      <div class="brand-item-name">CALVIN KLEIN</div>
+      <div class="brand-item-name">ESTÉE LAUDER</div>
+      <div class="brand-item-name">MAC COSMETICS</div>
+      <div class="brand-item-name">CHANEL</div>
+      <div class="brand-item-name">TITAN</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-container">
+      <div>
+        <div class="ss-logo" style="color:#ffffff;">SHOPPERS STOP<span>.</span></div>
+        <p style="margin-top:12px; line-height:1.7; color:#888888;">Shoppers Stop is India's leading omnichannel retailer for fashion, beauty, luxury, and home products. Bringing world-class brands to over 100 stores across India since 1991.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>WOMEN</h4>
+        <ul>
+          <li><a href="#" onclick="filterCategory('Ethnic')">Ethnic Wear</a></li>
+          <li><a href="#" onclick="filterCategory('Western')">Western Wear</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>MEN</h4>
+        <ul>
+          <li><a href="#" onclick="filterCategory('Men')">Formal Suits</a></li>
+          <li><a href="#" onclick="filterCategory('Men')">Casual Wear</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>BEAUTY</h4>
+        <ul>
+          <li><a href="#" onclick="filterCategory('Beauty')">Skincare</a></li>
+          <li><a href="#" onclick="filterCategory('Beauty')">Fragrances</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>CUSTOMER CARE</h4>
+        <ul>
+          <li><a href="#" onclick="openTrackModal()">Track Orders</a></li>
+          <li><a href="#" onclick="openLoginModal()">First Citizen Account</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>© 2026 Shoppers Stop Ltd. All Rights Reserved. CIN: L51900MH1997PLC108798</div>
+      <div>100% Authentic Products | Express Delivery | Easy Returns</div>
+    </div>
+  </footer>
+
+  <!-- ── CART SLIDE-OUT DRAWER ── -->
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-head">
+      <h3>SHOPPING BAG (<span id="cartItemCount">0</span>)</h3>
+      <button style="font-size:22px;" onclick="toggleCartDrawer(false)">✕</button>
+    </div>
+    <div class="cart-body" id="cartBodyContainer">
+      <!-- Cart items rendered by JS -->
+    </div>
+
+    <!-- COUPONS CONTAINER INSIDE CART (VISIBLE ONLY AFTER SIGN IN) -->
+    <div id="cartCouponsSection" style="padding: 0 24px 16px;">
+      <!-- Dynamic coupon section rendered by JS -->
+    </div>
+
+    <div class="cart-foot">
+      <div class="summary-line">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">₹0</span>
+      </div>
+      <div class="summary-line" style="color:var(--ss-red);">
+        <span>Coupon Discount (<strong id="appliedCouponCode">NONE</strong>)</span>
+        <span id="cartDiscount">-₹0</span>
+      </div>
+      <div class="summary-line">
+        <span>Estimated Delivery</span>
+        <span style="color:#2e7d32; font-weight:700;">FREE</span>
+      </div>
+      <div class="summary-line total">
+        <span>Total Payable</span>
+        <span id="cartGrandTotal">₹0</span>
+      </div>
+
+      <button class="checkout-btn" onclick="proceedToCheckoutFlow()">PROCEED TO CHECKOUT ➔</button>
+    </div>
+  </div>
+
+  <!-- ── USER LOGIN / SIGNUP MODAL ── -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-box">
+      <button class="close-modal-btn" onclick="closeModal('loginModal')">✕</button>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span style="font-size:22px;">👤</span>
+        <h2 style="font-size:20px; font-weight:800;">Sign In / Register</h2>
+      </div>
+      <p style="font-size:12px; color:var(--ss-gray); margin-bottom:20px;">Please sign in to unlock exclusive coupons, First Citizen rewards & proceed to checkout.</p>
+
+      <form onsubmit="handleUserLogin(event)">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="loginName" placeholder="Enter your full name" required value="" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number (for OTP & Order updates) *</label>
+          <input type="tel" id="loginPhone" placeholder="10-Digit Mobile No. e.g. 9820144321" required value="" />
+        </div>
+        <div class="form-group">
+          <label>Email Address (Optional)</label>
+          <input type="email" id="loginEmail" placeholder="your.name@gmail.com" value="" />
+        </div>
+        <button type="submit" class="submit-form-btn">SIGN IN & UNLOCK COUPONS ➔</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── RAZORPAY-STYLE PAYMENT MODAL ── -->
+  <div class="modal-overlay" id="rzpPaymentModal">
+    <div class="rzp-modal">
+      <div class="rzp-header">
+        <div class="rzp-merchant-info">
+          <h3>SHOPPERS STOP ONLINE STORE</h3>
+          <p>🔒 Razorpay 256-Bit SSL Encrypted Payment</p>
+        </div>
+        <div class="rzp-amount-badge">
+          <label>Amount Payable</label>
+          <span id="rzpPayableAmount">₹0</span>
+        </div>
+      </div>
+
+      <div class="rzp-body">
+        <div class="rzp-nav">
+          <div class="rzp-nav-item active" onclick="switchRzpTab('upi', this)">📱 UPI / QR Code</div>
+          <div class="rzp-nav-item" onclick="switchRzpTab('card', this)">💳 Cards (Debit/Credit)</div>
+          <div class="rzp-nav-item" onclick="switchRzpTab('netbanking', this)">🏦 Net Banking</div>
+          <div class="rzp-nav-item" onclick="switchRzpTab('cod', this)">💵 Cash on Delivery</div>
+        </div>
+
+        <div class="rzp-content">
+          <!-- Tab 1: UPI / QR -->
+          <div id="rzpTabUpi">
+            <div class="qr-container">
+              <p style="font-size:12px; font-weight:700; color:#334155;">Scan QR using GPay, PhonePe, Paytm or BHIM</p>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=shoppersstop@icici&pn=ShopperStop" class="qr-code-img" alt="UPI QR Code" />
+              <p style="font-size:11px; color:#64748b;">Or enter VPA: <strong>shoppersstop@icici</strong></p>
+            </div>
+          </div>
+
+          <!-- Tab 2: CARD -->
+          <div id="rzpTabCard" style="display:none;">
+            <div class="form-group">
+              <label>Card Number</label>
+              <input type="text" id="cardNoInput" placeholder="4532 8900 1234 5678" maxlength="19" value="" />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label>Expiry (MM/YY)</label>
+                <input type="text" id="cardExpInput" placeholder="MM/YY" maxlength="5" value="" />
+              </div>
+              <div class="form-group">
+                <label>CVV</label>
+                <input type="password" id="cardCvvInput" placeholder="•••" maxlength="3" value="" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Cardholder Name</label>
+              <input type="text" id="cardNameInput" placeholder="Name as on Card" value="" />
+            </div>
+          </div>
+
+          <!-- Tab 3: NETBANKING -->
+          <div id="rzpTabNetbanking" style="display:none;">
+            <p style="font-size:12px; font-weight:700; margin-bottom:12px;">Select Your Bank:</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <button style="border:1px solid #cbd5e1; padding:10px; border-radius:6px; font-size:12px; font-weight:700;" onclick="showToast('HDFC Bank selected')">HDFC Bank</button>
+              <button style="border:1px solid #cbd5e1; padding:10px; border-radius:6px; font-size:12px; font-weight:700;" onclick="showToast('ICICI Bank selected')">ICICI Bank</button>
+              <button style="border:1px solid #cbd5e1; padding:10px; border-radius:6px; font-size:12px; font-weight:700;" onclick="showToast('SBI selected')">State Bank of India</button>
+              <button style="border:1px solid #cbd5e1; padding:10px; border-radius:6px; font-size:12px; font-weight:700;" onclick="showToast('Axis Bank selected')">Axis Bank</button>
+            </div>
+          </div>
+
+          <!-- Tab 4: COD -->
+          <div id="rzpTabCod" style="display:none; text-align:center; padding:20px 0;">
+            <div style="font-size:40px; margin-bottom:10px;">💵</div>
+            <p style="font-size:13px; font-weight:700;">Pay via Cash / Card on Delivery</p>
+            <p style="font-size:11px; color:#64748b; margin-top:4px;">Pay securely when courier arrives at your doorstep.</p>
+          </div>
+
+          <button class="rzp-pay-now-btn" onclick="processRazorpayPayment()">PAY NOW 🔒</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ORDER SUCCESS RECEIPT MODAL ── -->
+  <div class="modal-overlay" id="orderSuccessModal">
+    <div class="modal-box" style="text-align:center; max-width:480px;">
+      <div class="success-icon-wrap">✓</div>
+      <h2 style="font-size:22px; font-weight:800; color:var(--ss-black); margin-bottom:4px;">Payment Successful!</h2>
+      <p style="font-size:13px; color:#16a34a; font-weight:700; margin-bottom:20px;">Your order has been confirmed & synced to Supabase</p>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; text-align:left; font-size:12.5px; margin-bottom:20px; line-height:1.8;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#64748b;">Order Number:</span>
+          <strong id="successOrderId" style="font-family:monospace; font-size:13px;">SS-ORD-98210</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#64748b;">Customer Name:</span>
+          <strong id="successCustomerName">Jaga Shopper</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#64748b;">Mobile:</span>
+          <strong id="successCustomerPhone">+91 98201 44321</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#64748b;">Payment Method:</span>
+          <strong style="color:var(--rzp-accent);">Razorpay Verified 🔒</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1;">
+          <span>Total Paid Amount:</span>
+          <strong id="successPaidAmount" style="font-size:15px; color:var(--ss-black);">₹0</strong>
+        </div>
+      </div>
+
+      <button class="submit-form-btn" onclick="closeModal('orderSuccessModal')">CONTINUE SHOPPING 🛍️</button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-msg" id="toastMsg">Coupon Code Copied!</div>
+
+  <script>
+    // ── PRODUCTS DATA ──
+    const ALL_PRODUCTS = [
+      { id: 101, brand: 'KASHISH', title: 'Embroidered Chanderi Anarkali Kurta Set', price: 4199, origPrice: 6999, category: 'ethnic', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=533&fit=crop&auto=format', badge: '-40% OFF' },
+      { id: 102, brand: 'W FOR WOMAN', title: 'Floral Printed Cotton Straight Kurti', price: 1949, origPrice: 2999, category: 'ethnic', img: 'https://images.unsplash.com/photo-1591085686350-798c0f9faa7f?w=400&h=533&fit=crop&auto=format', badge: '-35% OFF' },
+      { id: 103, brand: 'VERO MODA', title: 'Printed Wrap A-Line Midi Dress', price: 2749, origPrice: 5499, category: 'western', img: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&h=533&fit=crop&auto=format', badge: '-50% OFF' },
+      { id: 104, brand: 'TOMMY HILFIGER', title: 'Slim Fit Wool Blend Blazer', price: 11899, origPrice: 16999, category: 'men', img: 'https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=400&h=533&fit=crop&auto=format', badge: '-30% OFF' },
+      { id: 105, brand: 'CALVIN KLEIN', title: 'Solid Pure Linen Casual Shirt', price: 4499, origPrice: 5999, category: 'men', img: 'https://images.unsplash.com/photo-1578681994506-b8f463449011?w=400&h=533&fit=crop&auto=format', badge: '-25% OFF' },
+      { id: 106, brand: 'ESTÉE LAUDER', title: 'Advanced Night Repair Synchronized Multi-Recovery', price: 6800, origPrice: 8500, category: 'beauty', img: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=533&fit=crop&auto=format', badge: 'BESTSELLER' },
+      { id: 107, brand: 'CHANEL', title: 'Chance Eau Tendre Eau de Parfum 100ml', price: 14500, origPrice: 16000, category: 'beauty', img: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=400&h=533&fit=crop&auto=format', badge: 'LUXURY' },
+      { id: 108, brand: 'TED BAKER', title: 'Iconic Quilted Leather Shoulder Bag', price: 12499, origPrice: 17999, category: 'bags', img: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=533&fit=crop&auto=format', badge: '-30% OFF' },
+      { id: 109, brand: 'TITAN EDGE', title: 'Slimmest Ceramic Analog Watch', price: 15999, origPrice: 19999, category: 'watches', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=533&fit=crop&auto=format', badge: '-20% OFF' },
+      { id: 110, brand: 'MIA BY TANISHQ', title: 'Diamond Studded Yellow Gold Pendant', price: 24999, origPrice: 29999, category: 'jewellery', img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=533&fit=crop&auto=format', badge: '18K GOLD' }
+    ];
+
+    // ── STATE ──
+    let cart = [];
+    let wishlist = [];
+    let appliedCoupon = null;
+    let currentUser = null;
+
+    // ── RENDER PRODUCTS ──
+    function renderProducts(items) {
+      const container = document.getElementById('productsContainer');
+      container.innerHTML = items.map(p => `
+        <div class="product-card">
+          <div class="prod-media" onclick="quickView(${p.id})">
+            <img src="${p.img}" alt="${p.title}" />
+            <span class="discount-tag">${p.badge}</span>
+            <button class="wishlist-btn ${wishlist.includes(p.id)?'active':''}" onclick="event.stopPropagation(); toggleWishlist(${p.id})">
+              ${wishlist.includes(p.id)?'❤️':'♡'}
+            </button>
+          </div>
+          <div class="prod-details">
+            <div class="prod-brand">${p.brand}</div>
+            <div class="prod-title" onclick="quickView(${p.id})">${p.title}</div>
+            <div class="prod-price-row">
+              <span class="price-final">₹${p.price.toLocaleString('en-IN')}</span>
+              <span class="price-original">₹${p.origPrice.toLocaleString('en-IN')}</span>
+            </div>
+            <button class="add-to-bag-btn" onclick="addToCartById(${p.id})">ADD TO BAG</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    renderProducts(ALL_PRODUCTS);
+
+    // ── CART DRAWER LOGIC ──
+    function toggleCartDrawer(show) {
+      document.getElementById('cartDrawer').classList.toggle('active', show);
+      if(show) renderCartDrawer();
+    }
+
+    function renderCartDrawer() {
+      const body = document.getElementById('cartBodyContainer');
+      const countEl = document.getElementById('cartItemCount');
+      const badgeEl = document.getElementById('cartBadgeCount');
+      
+      const totalCount = cart.reduce((acc, item) => acc + item.qty, 0);
+      countEl.textContent = totalCount;
+      badgeEl.textContent = totalCount;
+
+      if(cart.length === 0) {
+        body.innerHTML = `
+          <div style="text-align:center; padding:60px 20px; color:#888;">
+            <div style="font-size:48px; margin-bottom:12px;">🛍️</div>
+            <div style="font-size:15px; font-weight:700; color:var(--ss-black);">Your Shopping Bag is Empty</div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">Add items to your bag to start shopping.</div>
+          </div>
+        `;
+      } else {
+        body.innerHTML = cart.map(item => `
+          <div class="cart-item-row">
+            <img class="cart-item-img" src="${item.img}" alt="${item.title}" />
+            <div class="cart-item-info">
+              <div class="cart-item-brand">${item.brand}</div>
+              <div class="cart-item-title">${item.title}</div>
+              <div class="cart-item-price">₹${item.price.toLocaleString('en-IN')}</div>
+              <div class="cart-qty-ctrl">
+                <button class="qty-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                <span style="font-weight:700; font-size:13px;">${item.qty}</span>
+                <button class="qty-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                <button style="margin-left:auto; color:var(--ss-red); font-size:11px; font-weight:700;" onclick="removeItem(${item.id})">REMOVE</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Render Coupons Section inside Cart (ONLY WHEN SIGNED IN)
+      const couponsSec = document.getElementById('cartCouponsSection');
+      if(!currentUser) {
+        couponsSec.innerHTML = `
+          <div class="locked-coupons-notice">
+            🔒 <strong>Sign In to view & unlock exclusive coupons</strong> (FESTIVE20, FIRSTCITIZEN15, BEAUTYBUY2, ENDOFSEASON50).
+            <br>
+            <button onclick="toggleCartDrawer(false); openLoginModal();">SIGN IN TO UNLOCK COUPONS ➔</button>
+          </div>
+        `;
+      } else {
+        couponsSec.innerHTML = `
+          <div class="cart-coupon-box">
+            <div class="cart-coupon-title">
+              <span>🎁 AVAILABLE COUPONS</span>
+              <span style="color:var(--ss-gold);">Member Privileges</span>
+            </div>
+            <div class="coupon-item-pill">
+              <div>
+                <span class="coupon-code-txt">FESTIVE20</span>
+                <span style="color:#64748b; font-size:10.5px;"> (20% OFF Ethnic)</span>
+              </div>
+              <button class="coupon-apply-btn" onclick="applyPromoCode('FESTIVE20')">APPLY</button>
+            </div>
+            <div class="coupon-item-pill">
+              <div>
+                <span class="coupon-code-txt">FIRSTCITIZEN15</span>
+                <span style="color:#64748b; font-size:10.5px;"> (15% OFF Member)</span>
+              </div>
+              <button class="coupon-apply-btn" onclick="applyPromoCode('FIRSTCITIZEN15')">APPLY</button>
+            </div>
+            <div class="coupon-item-pill">
+              <div>
+                <span class="coupon-code-txt">BEAUTYBUY2</span>
+                <span style="color:#64748b; font-size:10.5px;"> (₹1000 OFF Beauty)</span>
+              </div>
+              <button class="coupon-apply-btn" onclick="applyPromoCode('BEAUTYBUY2')">APPLY</button>
+            </div>
+            <div class="coupon-item-pill">
+              <div>
+                <span class="coupon-code-txt">ENDOFSEASON50</span>
+                <span style="color:#64748b; font-size:10.5px;"> (50% OFF Sale)</span>
+              </div>
+              <button class="coupon-apply-btn" onclick="applyPromoCode('ENDOFSEASON50')">APPLY</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Calculate totals
+      let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      let discount = 0;
+
+      if(appliedCoupon === 'FESTIVE20') discount = Math.round(subtotal * 0.20);
+      else if(appliedCoupon === 'FIRSTCITIZEN15') discount = Math.round(subtotal * 0.15);
+      else if(appliedCoupon === 'BEAUTYBUY2') discount = 1000;
+      else if(appliedCoupon === 'ENDOFSEASON50') discount = Math.round(subtotal * 0.50);
+
+      let grandTotal = Math.max(0, subtotal - discount);
+
+      document.getElementById('cartSubtotal').textContent = `₹${subtotal.toLocaleString('en-IN')}`;
+      document.getElementById('appliedCouponCode').textContent = appliedCoupon || 'NONE';
+      document.getElementById('cartDiscount').textContent = `-₹${discount.toLocaleString('en-IN')}`;
+      document.getElementById('cartGrandTotal').textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
+      document.getElementById('rzpPayableAmount').textContent = `₹${grandTotal.toLocaleString('en-IN')}`;
+    }
+
+    function addToCartById(id) {
+      const p = ALL_PRODUCTS.find(x => x.id === id);
+      if(!p) return;
+      const exist = cart.find(x => x.id === id);
+      if(exist) exist.qty += 1;
+      else cart.push({ ...p, qty: 1 });
+      
+      showToast(`🛍️ Added "${p.title}" to Bag!`);
+      renderCartDrawer();
+      toggleCartDrawer(true);
+    }
+
+    function updateQty(id, delta) {
+      const item = cart.find(x => x.id === id);
+      if(item) {
+        item.qty += delta;
+        if(item.qty <= 0) cart = cart.filter(x => x.id !== id);
+      }
+      renderCartDrawer();
+    }
+
+    function removeItem(id) {
+      cart = cart.filter(x => x.id !== id);
+      renderCartDrawer();
+    }
+
+    // ── PROCEED TO CHECKOUT WITH MANDATORY USER SIGN-IN CHECK ──
+    function proceedToCheckoutFlow() {
+      if(cart.length === 0) {
+        showToast("⚠️ Your Bag is empty!");
+        return;
+      }
+
+      if(!currentUser) {
+        toggleCartDrawer(false);
+        showToast("⚠️ Please Sign In first to proceed to Checkout!");
+        openLoginModal();
+        return;
+      }
+
+      toggleCartDrawer(false);
+      document.getElementById('rzpPaymentModal').classList.add('active');
+    }
+
+    // ── RAZORPAY TAB SWITCHING ──
+    function switchRzpTab(tab, el) {
+      document.querySelectorAll('.rzp-nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+
+      document.getElementById('rzpTabUpi').style.display = tab === 'upi' ? 'block' : 'none';
+      document.getElementById('rzpTabCard').style.display = tab === 'card' ? 'block' : 'none';
+      document.getElementById('rzpTabNetbanking').style.display = tab === 'netbanking' ? 'block' : 'none';
+      document.getElementById('rzpTabCod').style.display = tab === 'cod' ? 'block' : 'none';
+    }
+
+    function processRazorpayPayment() {
+      const orderId = `SS-ORD-${Math.floor(Math.random()*90000+10000)}`;
+      const paidAmount = document.getElementById('rzpPayableAmount').textContent;
+      let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      let discount = 0;
+      if(appliedCoupon === 'FESTIVE20') discount = Math.round(subtotal * 0.20);
+      else if(appliedCoupon === 'FIRSTCITIZEN15') discount = Math.round(subtotal * 0.15);
+      else if(appliedCoupon === 'BEAUTYBUY2') discount = 1000;
+      else if(appliedCoupon === 'ENDOFSEASON50') discount = Math.round(subtotal * 0.50);
+
+      closeModal('rzpPaymentModal');
+
+      // Fill success modal info
+      document.getElementById('successOrderId').textContent = orderId;
+      document.getElementById('successCustomerName').textContent = currentUser ? currentUser.name : "Valued Customer";
+      document.getElementById('successCustomerPhone').textContent = currentUser ? currentUser.phone : "";
+      document.getElementById('successPaidAmount').textContent = paidAmount;
+
+      document.getElementById('orderSuccessModal').classList.add('active');
+      
+      const orderPayload = {
+        id: orderId,
+        orderId: orderId,
+        customerName: currentUser ? currentUser.name : "Valued Customer",
+        customerPhone: currentUser ? currentUser.phone : "",
+        customerEmail: currentUser ? currentUser.email : "",
+        items: cart.map(c => ({ title: c.title, brand: c.brand, price: c.price, qty: c.qty })),
+        totalAmount: subtotal - discount,
+        couponCode: appliedCoupon || "",
+        discountSaved: discount,
+        paymentMethod: "Razorpay Verified",
+        status: "CONFIRMED",
+        storeLocation: "Mumbai - Malad West Flagship",
+        channel: "Online E-Commerce"
+      };
+
+      cart = [];
+      appliedCoupon = null;
+      renderCartDrawer();
+
+      // Post order sync to Python backend & Supabase
+      fetch('http://localhost:63265/api/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: orderPayload.customerName,
+          phone: orderPayload.customerPhone,
+          email: orderPayload.customerEmail,
+          total_spend: orderPayload.totalAmount,
+          coupon: orderPayload.couponCode || "ONLINE_PURCHASE"
+        })
+      }).catch(() => {});
+
+      if(orderPayload.couponCode) {
+        fetch('http://localhost:63265/api/redemptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            couponCode: orderPayload.couponCode,
+            customerName: orderPayload.customerName,
+            customerPhone: orderPayload.customerPhone,
+            discountSaved: orderPayload.discountSaved,
+            orderId: orderPayload.orderId,
+            orderTotal: orderPayload.totalAmount,
+            storeLocation: "Mumbai - Malad West Flagship"
+          })
+        }).catch(() => {});
+      }
+    }
+
+    // ── PROMO CODE APPLY (REQUIRES SIGN IN) ──
+    function applyPromoCode(code) {
+      if(!currentUser) {
+        showToast("⚠️ Please Sign In first to apply coupons!");
+        openLoginModal();
+        return;
+      }
+      appliedCoupon = code;
+      showToast(`🎁 Coupon "${code}" Applied Successfully!`);
+      renderCartDrawer();
+
+      fetch('http://localhost:63265/api/redemptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          couponCode: code,
+          customerName: currentUser.name,
+          customerPhone: currentUser.phone,
+          storeLocation: "Mumbai - Malad West Flagship"
+        })
+      }).catch(() => {});
+    }
+
+    // ── USER LOGIN SYNC ──
+    function openLoginModal() {
+      document.getElementById('loginModal').classList.add('active');
+    }
+
+    function handleUserLogin(e) {
+      e.preventDefault();
+      const name = document.getElementById('loginName').value.trim();
+      const phone = document.getElementById('loginPhone').value.trim();
+      const email = document.getElementById('loginEmail').value.trim();
+
+      if(!name || !phone) {
+        showToast("⚠️ Please enter your Name and Mobile Number!");
+        return;
+      }
+
+      currentUser = { name, phone, email };
+      document.getElementById('userAccountLabel').textContent = name.split(' ')[0];
+      document.getElementById('loyaltyMemberName').textContent = name.toUpperCase();
+      
+      closeModal('loginModal');
+      showToast(`Welcome ${name}! Signed in successfully. Coupons unlocked!`);
+
+      fetch('http://localhost:63265/api/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, coupon: "FIRSTCITIZEN15" })
+      }).catch(() => {});
+
+      toggleCartDrawer(true);
+    }
+
+    function toggleWishlist(id) {
+      const idx = wishlist.indexOf(id);
+      if(idx > -1) wishlist.splice(idx, 1);
+      else wishlist.push(id);
+      document.getElementById('wishlistBadge').textContent = wishlist.length;
+      renderProducts(ALL_PRODUCTS);
+      showToast(idx > -1 ? 'Removed from Wishlist' : '❤️ Added to Wishlist!');
+    }
+
+    function openWishlistModal() {
+      showToast(wishlist.length === 0 ? "Your Wishlist is empty!" : `Wishlist contains ${wishlist.length} saved item(s)!`);
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    function openTrackModal() { showToast("Track Order: Enter your SS-ORD number in SMS link."); }
+
+    function changePincode() {
+      const p = prompt("Enter 6-Digit Delivery Pincode:", "400001");
+      if(p && p.length === 6) {
+        document.getElementById('currentPincode').textContent = `${p} (Verified)`;
+        showToast(`📍 Delivery location updated to ${p}!`);
+      }
+    }
+
+    function filterProductTab(cat, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderProducts(cat === 'all' ? ALL_PRODUCTS : ALL_PRODUCTS.filter(x => x.category.toLowerCase().includes(cat)));
+    }
+
+    function filterCategory(catName) {
+      scrollToSection('products');
+      const filtered = ALL_PRODUCTS.filter(p => p.category.toLowerCase().includes(catName.toLowerCase()) || p.brand.toLowerCase().includes(catName.toLowerCase()));
+      renderProducts(filtered.length > 0 ? filtered : ALL_PRODUCTS);
+      showToast(`Showing items for category: ${catName}`);
+    }
+
+    function filterProductsBySearch(query) {
+      const q = query.toLowerCase().trim();
+      renderProducts(!q ? ALL_PRODUCTS : ALL_PRODUCTS.filter(p => p.title.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)));
+    }
+
+    function quickView(id) {
+      const p = ALL_PRODUCTS.find(x => x.id === id);
+      if(p) showToast(`Quick View: ${p.brand} - ${p.title} (₹${p.price.toLocaleString('en-IN')})`);
+    }
+
+    function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+
+    let curSlide = 0;
+    const track = document.getElementById('sliderTrack');
+    const dots = document.querySelectorAll('.dot');
+    function updateSlide() {
+      track.style.transform = `translateX(-${curSlide * 33.333}%)`;
+      dots.forEach((d, i) => d.classList.toggle('active', i === curSlide));
+    }
+    function nextSlide() { curSlide = (curSlide + 1) % 3; updateSlide(); }
+    function prevSlide() { curSlide = (curSlide - 1 + 3) % 3; updateSlide(); }
+    function setSlide(index) { curSlide = index; updateSlide(); }
+    setInterval(nextSlide, 5000);
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMsg');
+      toast.textContent = msg;
+      toast.classList.add('active');
+      setTimeout(() => toast.classList.remove('active'), 2500);
+    }
+  </script>
+</body>
+</html>
