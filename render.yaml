@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: shoppers-stop-fastapi-backend
+    runtime: python
+    region: singapore
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+      # Supabase Project A — In-Store Captive Portal Wi-Fi DB
+      - key: SUPABASE_A_URL
+        value: https://stnunolvbdvbhwolrnnd.supabase.co
+      - key: SUPABASE_A_KEY
+        sync: false        # Set manually in Render Dashboard > Environment
+
+      # Supabase Project B — Online E-Commerce Storefront DB
+      - key: SUPABASE_B_URL
+        value: https://juohiqxcfzququtuzxme.supabase.co
+      - key: SUPABASE_B_KEY
+        sync: false        # Set manually in Render Dashboard > Environment

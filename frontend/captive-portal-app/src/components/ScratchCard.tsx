@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Gift, Sparkles, CheckCircle2, Copy, Check, Ticket, ArrowRight } from 'lucide-react';
 import { CustomerInfo } from '../types';
+import { BarcodeDisplay } from './BarcodeDisplay';
 
 interface ScratchCardProps {
   customer: CustomerInfo;
@@ -368,6 +369,9 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({ customer, onExplore, o
                   )}
                 </button>
               </div>
+
+              {/* POS BARCODE GRAPHIC DISPLAY */}
+              <BarcodeDisplay code={assignedCoupon.code} discount={assignedCoupon.discount} className="mt-3" />
 
               <button
                 onClick={onExplore}

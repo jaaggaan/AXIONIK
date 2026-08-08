@@ -12,6 +12,7 @@ firebase-key.json.json
 **/.env
 **/.env.*
 !**/.env.example
+supabase_config.json
 
 # ============================================================
 # Python / Backend

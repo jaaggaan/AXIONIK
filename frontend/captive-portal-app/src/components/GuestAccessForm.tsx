@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wifi, Phone, Lock, User, Mail, Sparkles, ShieldCheck, ArrowRight, CheckCircle2, AlertCircle, UserCheck, KeyRound, UserPlus } from 'lucide-react';
 import { STORE_INFO } from '../data/mockStoreData';
 import { CustomerInfo } from '../types';
+import { BarcodeDisplay } from './BarcodeDisplay';
 
 interface GuestAccessFormProps {
   onSuccessNewUser: (customer: CustomerInfo) => void;
@@ -24,7 +25,8 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
   const [consentOffers, setConsentOffers] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(true);
 
-  const [connectingStep, setConnectingStep] = useState(0); // 0 = idle, 1 = verifying, 2 = assigning ip, 3 = connected
+  const [connectingStep, setConnectingStep] = useState(0); // 0 = idle, 1 = verifying, 2 = assigning ip, 3 = unlocking, 4 = unlocked reward
+  const [unlockedCustomer, setUnlockedCustomer] = useState<CustomerInfo | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Stored Customers Directory & Existing User Match
@@ -214,7 +216,7 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
   };
 
   // Submit Handler -> Starts step animation and passes customer to parent
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
@@ -228,33 +230,58 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
       setConnectingStep(3);
     }, 1800);
 
-    setTimeout(() => {
-      const cleanName = fullName.trim() || 'Wi-Fi Guest';
-      const cleanPhone = phone.replace(/[^0-9]/g, '') || '9876543210';
-      const cleanEmail = email.trim();
-      const formattedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const cleanName = fullName.trim() || 'Wi-Fi Guest';
+    const cleanPhone = phone.replace(/[^0-9]/g, '') || '9876543210';
+    const cleanEmail = email.trim();
+    const formattedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    let serverAssignedCoupon = 'FIRSTCITIZEN15';
+
+    try {
+      const apiUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:63265/api/esp32/checkin'
+        : (window.location.protocol + '//' + window.location.hostname + ':63265/api/esp32/checkin');
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        serverAssignedCoupon = data.assigned_coupon || data.coupon || (data.customer && data.customer.assigned_coupon) || 'FIRSTCITIZEN15';
+      }
+    } catch (e) {
+      // Fallback API endpoints
+      try {
+        const altRes = await fetch('/api/esp32/checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail })
+        });
+        if (altRes.ok) {
+          const data = await altRes.json();
+          serverAssignedCoupon = data.assigned_coupon || data.coupon || 'FIRSTCITIZEN15';
+        }
+      } catch (err) {}
+    }
+
+    setTimeout(() => {
+      let finalCust: CustomerInfo;
       if (activeTab === 'returning') {
-        // RETURNING MEMBER LOGIN -> Direct to Companion Discovery
-        const returningCust: CustomerInfo = {
+        finalCust = {
           fullName: recognizedMember?.name || cleanName,
           phone: cleanPhone,
           email: cleanEmail,
           consentOffers,
           termsAccepted,
           connectedAt: formattedTime,
-          sessionVoucherCode: recognizedMember?.sessionVoucherCode || assignedVoucherCode,
+          sessionVoucherCode: recognizedMember?.sessionVoucherCode || serverAssignedCoupon,
           sessionVoucherDiscount: '20% OFF',
           sessionVoucherDesc: 'Flat 20% off on all Ethnic & Designer Collections',
           sessionVoucherMinOrder: '₹4,999'
         };
-
-        const returningCoupon = returningCust.sessionVoucherCode || assignedVoucherCode;
-        const postPayload = JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail, coupon: returningCoupon });
-
-        fetch('http://localhost:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
-        fetch('http://127.0.0.1:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
-        fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
 
         try {
           const eventPayload = {
@@ -264,7 +291,7 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
               phone: cleanPhone,
               email: cleanEmail,
               connectedAt: formattedTime,
-              sessionVoucherCode: returningCust.sessionVoucherCode
+              sessionVoucherCode: finalCust.sessionVoucherCode
             },
             timestamp: Date.now()
           };
@@ -272,11 +299,20 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
           const channel = new BroadcastChannel('ss_wifi_channel');
           channel.postMessage(eventPayload);
         } catch (e) {}
-
-        onSuccessReturningUser(returningCust);
       } else {
-        // NEW GUEST ACCESS -> Advance to Scratch Card with assignedVoucherCode
-        const voucherCode = assignedVoucherCode;
+        finalCust = {
+          fullName: cleanName,
+          phone: cleanPhone,
+          email: cleanEmail,
+          consentOffers,
+          termsAccepted,
+          connectedAt: formattedTime,
+          sessionVoucherCode: serverAssignedCoupon,
+          sessionVoucherDiscount: '20% OFF',
+          sessionVoucherDesc: 'Flat 20% off on all Ethnic & Designer Collections',
+          sessionVoucherMinOrder: '₹4,999'
+        };
+
         const newCustObj = {
           id: `CUST-${Math.floor(1000 + Math.random() * 9000)}`,
           name: cleanName,
@@ -291,12 +327,6 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
           joinedDate: '2026-07-27',
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
         };
-
-        const postPayload = JSON.stringify({ name: cleanName, phone: cleanPhone, email: cleanEmail, coupon: voucherCode });
-
-        fetch('http://localhost:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
-        fetch('http://127.0.0.1:63265/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
-        fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: postPayload }).catch(() => {});
 
         try {
           const existingStr = localStorage.getItem('SS_STORED_CUSTOMERS');
@@ -315,7 +345,7 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
               phone: cleanPhone,
               email: cleanEmail,
               connectedAt: formattedTime,
-              sessionVoucherCode: voucherCode
+              sessionVoucherCode: serverAssignedCoupon
             },
             timestamp: Date.now()
           };
@@ -323,18 +353,20 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
           const channel = new BroadcastChannel('ss_wifi_channel');
           channel.postMessage(eventPayload);
         } catch (e) {}
-
-        onSuccessNewUser({
-          fullName: cleanName,
-          phone: cleanPhone,
-          email: cleanEmail,
-          consentOffers,
-          termsAccepted,
-          connectedAt: formattedTime,
-          sessionVoucherCode: voucherCode,
-        });
       }
-    }, 2600);
+
+      setUnlockedCustomer(finalCust);
+      setConnectingStep(4);
+    }, 2400);
+  };
+
+  const handleProceedToStore = () => {
+    if (!unlockedCustomer) return;
+    if (activeTab === 'returning') {
+      onSuccessReturningUser(unlockedCustomer);
+    } else {
+      onSuccessNewUser(unlockedCustomer);
+    }
   };
 
   return (
@@ -400,27 +432,58 @@ export const GuestAccessForm: React.FC<GuestAccessFormProps> = ({ onSuccessNewUs
             </div>
 
             {connectingStep > 0 ? (
-              <div className="py-10 text-center space-y-4">
-                <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border-4 border-[#9e001c]/20 border-t-[#9e001c] animate-spin" />
-                  <Wifi className="w-8 h-8 text-[#9e001c]" />
+              connectingStep === 4 && unlockedCustomer ? (
+                <div className="py-2 text-center space-y-4 animate-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Wi-Fi Connected • Voucher Activated</span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-serif font-black text-[#1a1a1a]">
+                      Shoppers Stop Welcome Reward
+                    </h3>
+                    <p className="text-xs text-[#777063] mt-0.5">
+                      Assigned to {unlockedCustomer.fullName} ({unlockedCustomer.phone})
+                    </p>
+                  </div>
+
+                  {/* LIVE POS BARCODE DISPLAY */}
+                  <BarcodeDisplay
+                    code={unlockedCustomer.sessionVoucherCode || 'FIRSTCITIZEN15'}
+                    discount={unlockedCustomer.sessionVoucherDiscount || '20% OFF'}
+                  />
+
+                  {/* USER REQUESTED REDEEM COUPON IN STORE BUTTON AT THE BOTTOM */}
+                  <button
+                    type="button"
+                    onClick={handleProceedToStore}
+                    className="w-full py-4 bg-gradient-to-r from-[#9e001c] via-[#b30021] to-[#9e001c] hover:from-[#800014] hover:to-[#9e001c] text-white text-xs sm:text-sm font-extrabold tracking-widest uppercase rounded-xl transition-all shadow-xl hover:shadow-2xl cursor-pointer flex items-center justify-center gap-2 mt-4"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#ffd700]" />
+                    <span>REDEEM COUPON IN STORE →</span>
+                  </button>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-[#1a1a1a]">
-                    {connectingStep === 1 && (activeTab === 'returning' ? 'Authenticating Returning Member...' : 'Verifying First Citizen Credentials...')}
-                    {connectingStep === 2 && 'Assigning High-Speed Wi-Fi IP Address...'}
-                    {connectingStep === 3 && (activeTab === 'returning' ? 'Session Resumed! Loading Companion...' : 'Connection Established! Unlocking Voucher...')}
-                  </h3>
-                  <p className="text-xs text-[#777063] mt-1">
-                    Welcome to Shoppers Stop • {fullName || 'Valued Guest'}
-                  </p>
+              ) : (
+                <div className="py-10 text-center space-y-4">
+                  <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-4 border-[#9e001c]/20 border-t-[#9e001c] animate-spin" />
+                    <Wifi className="w-8 h-8 text-[#9e001c]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#1a1a1a]">
+                      {connectingStep === 1 && (activeTab === 'returning' ? 'Authenticating Returning Member...' : 'Verifying First Citizen Credentials...')}
+                      {connectingStep === 2 && 'Assigning High-Speed Wi-Fi IP Address...'}
+                      {connectingStep === 3 && (activeTab === 'returning' ? 'Session Resumed! Unlocking Voucher...' : 'Connection Established! Unlocking Voucher...')}
+                    </h3>
+                    <p className="text-xs text-[#777063] mt-1">
+                      Welcome to Shoppers Stop • {fullName || 'Valued Guest'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="hidden" name="coupon" value={assignedVoucherCode} />
-                <input type="hidden" name="couponCode" value={assignedVoucherCode} />
-                <input type="hidden" name="sessionVoucherCode" value={assignedVoucherCode} />
                 {/* Recognized Returning Member Box */}
                 {activeTab === 'returning' && recognizedMember && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2.5 text-xs text-emerald-900 font-semibold animate-fade-in">

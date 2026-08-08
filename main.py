@@ -46,13 +46,13 @@ STORES: dict[str, dict[str, Any]] = {
 # ---------------------------------------------------------------------------
 # Supabase PostgreSQL Cloud Database Service
 # ---------------------------------------------------------------------------
-# Project A (In-Store Captive Portal Wi-Fi)
-SUPA_INSTORE_URL = "https://stnunolvbdvbhwolrnnd.supabase.co"
-SUPA_INSTORE_KEY = "sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA"
+# Project A (In-Store Captive Portal Wi-Fi) — reads from env vars on Render
+SUPA_INSTORE_URL = os.environ.get("SUPABASE_A_URL", "https://stnunolvbdvbhwolrnnd.supabase.co")
+SUPA_INSTORE_KEY = os.environ.get("SUPABASE_A_KEY", "sb_publishable_lb5pkUjGApbO0gjZDwz70w_kPLLQLxA")
 
-# Project B (Online E-Commerce Storefront)
-SUPA_ONLINE_URL = "https://juohiqxcfzququtuzxme.supabase.co"
-SUPA_ONLINE_KEY = "sb_publishable_GLqjcXd0gGy58SzO01eO0Q_Yu5_Tc-h"
+# Project B (Online E-Commerce Storefront) — reads from env vars on Render
+SUPA_ONLINE_URL = os.environ.get("SUPABASE_B_URL", "https://juohiqxcfzququtuzxme.supabase.co")
+SUPA_ONLINE_KEY = os.environ.get("SUPABASE_B_KEY", "sb_publishable_GLqjcXd0gGy58SzO01eO0Q_Yu5_Tc-h")
 
 supabase_instore_client: Any = None
 supabase_online_client: Any = None
@@ -87,19 +87,74 @@ try:
         logger.warning("Supabase Project B init error: %s", err_b)
 
     supabase_ready = bool(supabase_instore_client or supabase_online_client)
-    # Default fallback alias
-    supabase_client = supabase_online_client or supabase_instore_client
+    # Default fallback alias (prioritize In-Store Project A for in-store coupons/feedbacks)
+    supabase_client = supabase_instore_client or supabase_online_client
 except Exception as exc:
     logger.warning("Supabase initialization error: %s", exc)
 
+
+
+# ---------------------------------------------------------------------------
+# Background Resilience Queue for Dual Database Sync
+# ---------------------------------------------------------------------------
+import threading
+_db_retry_queue: list[dict[str, Any]] = []
+_db_retry_lock = threading.Lock()
+
+def enqueue_db_retry(target_table: str, data: dict[str, Any], failed_clients: list[Any]) -> None:
+    with _db_retry_lock:
+        _db_retry_queue.append({
+            "table": target_table,
+            "data": data,
+            "clients": failed_clients,
+            "attempts": 0,
+            "timestamp": time.time()
+        })
+        logger.info("[RETRY QUEUE] Staged failed %s write for background retry queue (Queue size: %d)", target_table, len(_db_retry_queue))
+
+def _run_db_retry_worker() -> None:
+    while True:
+        time.sleep(15.0)
+        with _db_retry_lock:
+            if not _db_retry_queue:
+                continue
+            to_retry = list(_db_retry_queue)
+            _db_retry_queue.clear()
+        
+        for item in to_retry:
+            tbl = item["table"]
+            d = item["data"]
+            still_failed = []
+            for client in item["clients"]:
+                try:
+                    client.table(tbl).upsert(d).execute()
+                    logger.info("[RETRY QUEUE SUCCESS] Successfully synced staged %s record!", tbl)
+                except Exception as ex:
+                    still_failed.append(client)
+                    logger.warning("[RETRY QUEUE RETRY FAILED] Table %s: %s", tbl, ex)
+            if still_failed and item["attempts"] < 5:
+                item["attempts"] += 1
+                item["clients"] = still_failed
+                with _db_retry_lock:
+                    _db_retry_queue.append(item)
+
+_retry_worker_thread = threading.Thread(target=_run_db_retry_worker, daemon=True, name="DB_Retry_Worker")
+_retry_worker_thread.start()
 
 
 def supabase_save_customer(cust: dict[str, Any]) -> None:
     if not supabase_ready:
         return
     try:
-        incoming_cpn = str(cust.get("coupon") or cust.get("couponCode") or cust.get("coupon_code") or cust.get("sessionVoucherCode") or cust.get("assigned_coupon") or "")
-        assigned_cpn = incoming_cpn.strip().upper() if incoming_cpn else get_random_coupon_code()
+        incoming_cpn = str(cust.get("coupon") or cust.get("couponCode") or cust.get("coupon_code") or cust.get("sessionVoucherCode") or cust.get("assigned_coupon") or "").strip().upper()
+        # Atomic Campaign Coupon Validation
+        if incoming_cpn in ACTIVE_COUPON_CODES:
+            assigned_cpn = incoming_cpn
+        elif incoming_cpn:
+            assigned_cpn = incoming_cpn
+        else:
+            assigned_cpn = get_random_coupon_code()
+
         data = {
             "id": str(cust.get("user_id") or cust.get("id") or f"cust_{cust.get('phone', '0')}"),
             "user_id": str(cust.get("user_id") or cust.get("id") or ""),
@@ -114,11 +169,15 @@ def supabase_save_customer(cust: dict[str, Any]) -> None:
             "last_visit": str(cust.get("last_visit") or datetime.now(timezone.utc).isoformat())
         }
         clients = [c for c in [supabase_online_client, supabase_instore_client] if c]
+        failed_clients = []
         for client in clients:
             try:
                 client.table("customers").upsert(data).execute()
             except Exception as ex:
                 logger.warning("Single client customer save note: %s", ex)
+                failed_clients.append(client)
+        if failed_clients:
+            enqueue_db_retry("customers", data, failed_clients)
         logger.info("✓ Saved customer %s (Assigned Coupon: %s) to Supabase!", data["name"], data["assigned_coupon"])
     except Exception as e:
         logger.error("Supabase customer save error: %s", e)
@@ -199,11 +258,15 @@ def supabase_save_order(order: dict[str, Any]) -> None:
             "channel": str(order.get("channel") or "Online E-Commerce")
         }
         clients = [c for c in [supabase_online_client, supabase_instore_client] if c]
+        failed_clients = []
         for client in clients:
             try:
                 client.table("orders").upsert(data).execute()
             except Exception as ex:
                 logger.warning("Single client order save note: %s", ex)
+                failed_clients.append(client)
+        if failed_clients:
+            enqueue_db_retry("orders", data, failed_clients)
         logger.info("✓ Saved order %s to Supabase!", data["order_id"])
     except Exception as e:
         logger.error("Supabase order save error: %s", e)
@@ -229,11 +292,15 @@ def supabase_save_redemption(red: dict[str, Any]) -> None:
             "store_location": str(red.get("storeLocation") or "Mumbai - Malad West Flagship")
         }
         clients = [c for c in [supabase_online_client, supabase_instore_client] if c]
+        failed_clients = []
         for client in clients:
             try:
                 client.table("redemptions").upsert(data).execute()
             except Exception as ex:
                 logger.warning("Single client redemption save note: %s", ex)
+                failed_clients.append(client)
+        if failed_clients:
+            enqueue_db_retry("redemptions", data, failed_clients)
         logger.info("✓ Saved redemption %s for %s (%s) to Supabase!", data["id"], data["customer_name"], data["coupon_code"])
 
         # Also update the coupons row: bump usage_count & append customer name
@@ -281,7 +348,6 @@ def supabase_save_coupon(cpn: dict[str, Any]) -> None:
         return
     try:
         data = {
-            "id": str(cpn.get("id") or f"CPN-{int(datetime.now().timestamp())}"),
             "code": str(cpn.get("code") or "").replace(" ", "").upper(),
             "title": str(cpn.get("title") or cpn.get("code") or "Coupon Offer"),
             "description": str(cpn.get("description") or "Promotional Discount"),
@@ -295,7 +361,17 @@ def supabase_save_coupon(cpn: dict[str, Any]) -> None:
             "end_date": str(cpn.get("endDate") or cpn.get("end_date") or "2026-12-31"),
             "applicable_category": str(cpn.get("applicableCategory") or cpn.get("applicable_category") or "Site-wide")
         }
-        supabase_client.table("coupons").upsert(data).execute()
+        try:
+            supabase_client.table("coupons").upsert(data, on_conflict="code").execute()
+        except Exception as ex1:
+            logger.warning("Full schema coupon save note: %s — trying fallback schema", ex1)
+            fallback_data = {
+                "code": data["code"],
+                "discount_type": data["discount_type"],
+                "discount_value": data["discount_value"],
+                "active": True
+            }
+            supabase_client.table("coupons").upsert(fallback_data, on_conflict="code").execute()
         logger.info("✓ Saved coupon %s to Supabase!", data["code"])
     except Exception as e:
         logger.error("Supabase coupon save error: %s", e)
@@ -526,10 +602,10 @@ except Exception as _e:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],           # Allows Vercel, ESP32, mobile captive portal WebViews
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 @app.get("/", response_class=HTMLResponse)

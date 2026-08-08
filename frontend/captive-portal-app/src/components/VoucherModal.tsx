@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Ticket, Copy, Check, Info, ShieldCheck } from 'lucide-react';
 import { CustomerInfo } from '../types';
+import { BarcodeDisplay } from './BarcodeDisplay';
 
 interface VoucherModalProps {
   customer: CustomerInfo | null;
@@ -74,14 +75,9 @@ export const VoucherModal: React.FC<VoucherModalProps> = ({ customer, onClose })
               </button>
             </div>
 
-            {/* POS BARCODE GRAPHIC */}
-            <div className="bg-white p-2.5 rounded-lg border border-[#e5dec9] space-y-1">
-              <div className="h-10 w-full flex items-center justify-center gap-1 overflow-hidden opacity-90">
-                {[3,1,2,4,1,3,2,1,4,2,1,3,1,2,3,1,4,2,1,3,2,1,4,1,3,1,2,4,2,1,3].map((w, idx) => (
-                  <div key={idx} className="bg-black h-full" style={{ width: `${w * 1.5}px` }} />
-                ))}
-              </div>
-              <p className="text-[10px] text-[#777063] font-mono">Present at cashier billing counter</p>
+            {/* POS BARCODE DISPLAY */}
+            <div className="mt-4">
+              <BarcodeDisplay code={voucherCode} discount={discountLabel} />
             </div>
           </div>
 
